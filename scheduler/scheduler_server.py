@@ -15,6 +15,8 @@ class SchedulerHTTPHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         return
+    def do_REGISTER(self, worker):
+        self.scheduler.register(worker)
 
 # class Server():
 def run(server_class=HTTPServer, handler_class=SchedulerHTTPHandler):
@@ -25,5 +27,5 @@ def run(server_class=HTTPServer, handler_class=SchedulerHTTPHandler):
 
 
 if __name__ == "__main__":
-    run()
     print('Server listening on PORT 8000')
+    run()

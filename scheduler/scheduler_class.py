@@ -1,7 +1,6 @@
 class Scheduler():    
     def __init__(self):
-        # self.connect()
-        self.pinche = 1
+        self.workers = []
 
-    # def connect(self):
-    #     Server.run()
+    def register(self, worker):
+        self.workers.append(worker)
