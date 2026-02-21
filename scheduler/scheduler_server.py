@@ -8,15 +8,16 @@ port = int(os.getenv("PORT"))
 
 class SchedulerHTTPHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(400, 'received')
-
-        # 2. Send headers, including Content-Type
+        self.send_response(200, 'received')
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
-
         return
+        
     def do_REGISTER(self, worker):
         self.scheduler.register(worker)
+        self.send_response(200, 'worker registered')
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
 
 # class Server():
 def run(server_class=HTTPServer, handler_class=SchedulerHTTPHandler):

@@ -1,12 +1,10 @@
-# workers should be able to:
-    # register with the scheduler
-    # complete tasks
-    # update scheduler on status
-    # 
 import sys
 import requests
 import os
 from dotenv import load_dotenv
+import json
+import websockets
+import asyncio
 
 load_dotenv()
 port = os.getenv("PORT")
@@ -14,17 +12,31 @@ port = os.getenv("PORT")
 class Worker():
     def __init__(self, id):
         self.id = id
+        self.status = -1
+        # self.registerWithScheduler()
 
-    def registerWithScheduler(self):
-        r = requests.post("http://localhost:8000/register", json=self)
+
+    async def registerWithScheduler(self):
+        # payload = {'id' : self.id}
+        uri = 'ws://localhost:8001'
+        async with websockets.connect(uri) as websocket:
+        # Send a message to the server
+            await websocket.send(f'{self.id}')
+
+        # Receive a response from the server
+            message = await websocket.recv()
+            print(f"Received: {message}")
 
 
-def gen_workers(n):
+async def create_workers(n):
+    # for id in range(n):
+    #     w = Worker(id)
     for id in range(n):
         w = Worker(id)
-        w.registerWithScheduler()
+        await w.registerWithScheduler()
 
 
-if __name__ == "__main__"():
-    if len(sys.argv) >= 1:
-        n_workers = sys.argv[0]
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        n_workers = int(sys.argv[1])
+        asyncio.run(create_workers(n_workers))

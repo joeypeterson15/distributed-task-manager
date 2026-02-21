@@ -1,6 +1,7 @@
 class Scheduler():    
     def __init__(self):
-        self.workers = []
+        self.workers = set()
 
-    def register(self, worker):
-        self.workers.append(worker)
+    def register(self,id):
+        self.workers.add(id)
+        print('workers registered:', self.workers)
