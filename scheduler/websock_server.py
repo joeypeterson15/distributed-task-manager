@@ -20,8 +20,11 @@ async def server():
             scheduler.register_worker(id)
             await websocket.send(f'Worker{id} Registered')
         if name == 'client':
+            tasks = payload['tasks']
             scheduler.register_client(id)
             await websocket.send(f'Client Registered')
+            scheduler.register_tasks(tasks)
+            await websocket.send(f'Tasks Registered')
          
 
     async def main():

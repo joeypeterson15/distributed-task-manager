@@ -10,6 +10,8 @@ class Scheduler():
 
     def register_client(self, id):
         self.client = id
+    def register_tasks(self, tasks):
+        self.tasks = tasks
 
     def assign_workers(self):
         # configure tasks:
