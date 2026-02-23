@@ -6,37 +6,44 @@ import json
 import websockets
 import asyncio
 
+URI = 'ws://localhost:8001'
 load_dotenv()
 port = os.getenv("PORT")
+
+MESSAGE = {
+    'register' : {
+        'type': 'register',
+        'payload': {
+            'name': 'worker',
+            'id': None
+        }
+    }
+}
 
 class Worker():
     def __init__(self, id):
         self.id = id
         self.status = -1
-        # self.registerWithScheduler()
-
 
     async def registerWithScheduler(self):
-        # payload = {'id' : self.id}
-        uri = 'ws://localhost:8001'
-        async with websockets.connect(uri) as websocket:
-        # Send a message to the server
-            await websocket.send(f'{self.id}')
+        async with websockets.connect(URI) as websocket:
+            payload = MESSAGE['register']
+            payload['payload']['id'] = self.id
+            payload = json.dumps(payload)
+            await websocket.send(payload)
 
-        # Receive a response from the server
             message = await websocket.recv()
-            print(f"Received: {message}")
-
+            print(f"Server: {message}")
 
 async def create_workers(n):
-    # for id in range(n):
-    #     w = Worker(id)
     for id in range(n):
         w = Worker(id)
         await w.registerWithScheduler()
 
 
 if __name__ == "__main__":
+    n_workers = 1
     if len(sys.argv) > 1:
         n_workers = int(sys.argv[1])
-        asyncio.run(create_workers(n_workers))
+    
+    asyncio.run(create_workers(n_workers))
