@@ -15,14 +15,14 @@ MESSAGE = {
         'type': 'register',
         'payload': {
             'name': 'worker',
-            'id': None
+            'id': ''
         }
     },
 
     'stdout' : {
         'type': 'stdout',
         'payload': {
-            'message': None
+            'message': ''
         } 
     }
 }
@@ -41,7 +41,7 @@ class Worker():
 
                 if message['type'] == 'task_assign':
                     self.process_task(message['payload'])
-                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} processing task'})
+                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} processing task: {message['payload']['task']}'})
 
     def process_task(self, payload):
         return
