@@ -1,15 +1,15 @@
 class Scheduler():    
     def __init__(self):
-        self.client = None
+        self.client = ''
         self.workers = []
-        self.tasks = []
+        self.tasks = ''
 
-    def register_worker(self, id):
-        self.workers.append(id)
-        print('workers registered:', self.workers)
+    def register_worker(self, websocket):
+        self.workers.append(websocket)
 
-    def register_client(self, id):
-        self.client = id
+    def register_client(self, websocket):
+        self.client = websocket
+
     def register_tasks(self, tasks):
         self.tasks = tasks
 
