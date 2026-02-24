@@ -17,39 +17,53 @@ MESSAGE = {
             'name': 'worker',
             'id': None
         }
+    },
+
+    'stdout' : {
+        'type': 'stdout',
+        'payload': {
+            'message': None
+        } 
     }
 }
 
 class Worker():
     def __init__(self, id):
         self.id = id
-        self.status = -1
 
     async def connect(self):
         async with websockets.connect(URI) as websocket:
-            await self.register(websocket)
+            await self.send(websocket, 'register', **{'id': f'{self.id}'})
 
             while True:
                 message = await websocket.recv()
-                print(f"Server: {message}")
+                message = json.loads(message)
 
-    async def register(self, websocket):
-        payload = MESSAGE['register']
-        payload['payload']['id'] = self.id
-        payload = json.dumps(payload)
-        await websocket.send(payload)
+                if message['type'] == 'task_assign':
+                    self.process_task(message['payload'])
+                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} processing task'})
 
-async def gather_workers(n):
-    await asyncio.gather(create_workers(n))
+    def process_task(self, payload):
+        return
+    
+    async def send(self, websocket, type, **kwargs):
+        message = MESSAGE[type]
+        for key in kwargs.keys():
+            message['payload'][key] = kwargs[key]
+        await websocket.send(json.dumps(message))
 
-async def create_workers(n):
+
+async def gen_workers(n):
+    workers = []
     for id in range(n):
         w = Worker(id)
-        await w.connect()
+        workers.append(w.connect())
+    await asyncio.gather(*workers)
+
 
 if __name__ == "__main__":
     n_workers = 1
     if len(sys.argv) > 1:
         n_workers = int(sys.argv[1])
     
-    asyncio.run(gather_workers(n_workers))
+    asyncio.run(gen_workers(n_workers))
