@@ -43,29 +43,33 @@ async def server():
             
             # wait for worker updates, then reassign tasks when all workers done
             while scheduler.status == 1:
-                curr_epoch = 0
-                while curr_epoch < scheduler.epochs:
-                    message = json.loads(await websocket.recv())
+                while scheduler.curr_epoch < scheduler.epochs:
+                    n_worker_updates = 0
+                    while n_worker_updates < scheduler.n_regions:
                     # workers will send updated regions here.
                     #  payload:
                         # worker region
                         # region updated values
                     # scheduler needs to update global grid, and send back new boundary conditions
+                        message = json.loads(await websocket.recv())
+                        
+                        status = message['payload']['status']
+                        reg_row, reg_col = message['payload']['region']
+                        reg_updates = message['payload']['region_updates'] #needs to be a precision grid => 5 x 5 matrix
+                        for m in range(scheduler.n_grid_rows):
+                            for n in range(scheduler.n_grid_cols):
+                                scheduler.epochs_grid[scheduler.curr_epoch][reg_row][reg_col][m][n] = reg_updates[m][n]
+
+                        n_worker_updates += 1
+                    
+                    assign_tasks()
+                    scheduler.curr_epoch += 1
 
 
-                
-                
-
+                    
     async def assign_tasks():
         for i, reg in enumerate(scheduler.regions):
-            payload = {
-                'task' : reg,
-                'meta' : {
-                    'n_grid_cols': scheduler.n_grid_cols,
-                    'n_grid_rows': scheduler.n_grid_rows,
-                    'region_precision': scheduler.n_region_precision
-                },
-            }
+            payload = scheduler.gen_task_payload(reg)
             await send(scheduler.workers[i], 'task_assign', **payload)
 
 

@@ -46,6 +46,8 @@ class Worker():
 
     def process_task(self):
         dims = self.meta['region_precision']
+        # this is where we start writing heat equation code.
+        # the worker should not need to know about how to do the calculations. It can call another class for that.
     
     async def send(self, websocket, type, **kwargs):
         message = MESSAGE[type]
