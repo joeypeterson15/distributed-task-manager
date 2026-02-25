@@ -1,5 +1,4 @@
 import sys
-import requests
 import os
 from dotenv import load_dotenv
 import json
@@ -40,11 +39,13 @@ class Worker():
                 message = json.loads(message)
 
                 if message['type'] == 'task_assign':
-                    self.process_task(message['payload'])
-                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} processing task: {message['payload']['task']}'})
+                    self.task = message['payload']['task']
+                    self.meta = message['payload']['meta']
+                    self.process_task()
+                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task: {message['payload']['task']}'})
 
-    def process_task(self, payload):
-        return
+    def process_task(self):
+        dims = self.meta['region_precision']
     
     async def send(self, websocket, type, **kwargs):
         message = MESSAGE[type]
