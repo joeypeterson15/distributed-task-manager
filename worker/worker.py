@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import json
 import websockets
 import asyncio
+import heat
 
 URI = 'ws://localhost:8001'
 load_dotenv()
@@ -39,13 +40,13 @@ class Worker():
                 message = json.loads(message)
 
                 if message['type'] == 'task_assign':
+                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task: {message['payload']['task']}'})
                     self.task = message['payload']['task']
                     self.meta = message['payload']['meta']
                     self.process_task()
-                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task: {message['payload']['task']}'})
 
     def process_task(self):
-        dims = self.meta['region_precision']
+        new_region = heat.update_region(self.task, self.meta)
         # this is where we start writing heat equation code.
         # the worker should not need to know about how to do the calculations. It can call another class for that.
     
