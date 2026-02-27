@@ -46,3 +46,5 @@ print(n)
 #     return [[m,n] for n in range(n_cols) for m in range(n_rows)]
 
 # print(collect_regions(3, 3))
+
+print([[] for _ in range(4)])
