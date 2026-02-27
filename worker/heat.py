@@ -17,7 +17,7 @@ def update_region(grid, region_coords, n_regions, n_cells):
               + region_plus_ghost[m][n - 1]
               + region_plus_ghost[m][n + 1]
               - 4 * (region_plus_ghost[m][n]))
-            
+
             next_region[m][n] = value
     # print(region_plus_ghost)
     return next_region

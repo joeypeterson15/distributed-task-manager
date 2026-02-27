@@ -1,3 +1,5 @@
+import numpy as np
+
 class Scheduler():    
     def __init__(self):
         self.client = ''
@@ -9,20 +11,13 @@ class Scheduler():
     def configure(self):
         self.n_grid_cols = 3
         self.n_grid_rows = 3
-        self.n_regions = self.n_grid_cols * self.n_grid_rows
-        self.n_region_precision = 5
+        self.n_cells = 5
         self.regions = self.collect_regions(self.n_grid_cols, self.n_grid_rows)
         self.sim_duration = 10 #seconds
         self.time_interval = 1 #seconds
         self.epochs = self.sim_duration // self.time_interval
-        self.curr_epoch = 0
-        self.epochs_grid = self.gen_grid()
-        # print('grid epochs: ', len(self.epochs_grid))
-        # print('ind grid rows: ', len(self.epochs_grid[0]))
-        # print('ind grid cols: ', len(self.epochs_grid[0][0]))
-        # print('ind grid cols: ', len(self.epochs_grid[0][0]))
-        # print('ind precision rows: ', len(self.epochs_grid[0][0][0]))
-        # print('ind precision cols: ', len(self.epochs_grid[0][0][0][0]))
+        self.epoch = 0
+        self.grid = self.gen_grid()
 
     def register_worker(self, websocket):
         self.workers.append(websocket)
@@ -39,9 +34,15 @@ class Scheduler():
     def assign_workers(self):
         return
     
+    def update_grid(self, region_coords, new_region):
+        reg_row, reg_col = region_coords
+        self.grid[self.epoch][reg_row][reg_col] = new_region
+    
     def gen_grid(self):
-        grid = [[[[False for _ in range(self.n_region_precision)] for _ in range(self.n_region_precision)] for _ in range(self.n_grid_cols)] for _ in range(self.n_grid_rows)]
-        return [grid] * self.epochs
+        # grid = [[[[0 for _ in range(self.n_cells)] for _ in range(self.n_cells)] for _ in range(self.n_grid_cols)] for _ in range(self.n_grid_rows)]
+        # return [grid] * self.epochs
+        grid = np.zeros(shape=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
+        return grid
     
     def collect_regions(self, n_cols, n_rows):
         return [[m,n] for n in range(n_cols) for m in range(n_rows)]
@@ -50,10 +51,9 @@ class Scheduler():
         return {
                 'task' : region,
                 'meta' : {
-                    'n_grid_cols': self.n_grid_cols,
-                    'n_grid_rows': self.n_grid_rows,
-                    'region_precision': self.n_region_precision,
-                    'initial_grid': self.epochs_grid[self.curr_epoch]
+                    'n_regions': (self.n_grid_cols, self.n_grid_rows),
+                    'n_cells': self.n_cells,
+                    'grid': self.grid[self.epoch]
                 },
             }
 

@@ -43,7 +43,7 @@ async def server():
             
             # wait for worker updates, then reassign tasks when all workers done
             while scheduler.status == 1:
-                while scheduler.curr_epoch < scheduler.epochs:
+                while scheduler.epoch < scheduler.epochs:
                     n_worker_updates = 0
                     while n_worker_updates < scheduler.n_regions:
                     # workers will send updated regions here.
@@ -53,17 +53,18 @@ async def server():
                     # scheduler needs to update global grid, and send back new boundary conditions
                         message = json.loads(await websocket.recv())
                         
-                        status = message['payload']['status']
-                        reg_row, reg_col = message['payload']['region']
-                        reg_updates = message['payload']['region_updates'] #needs to be a precision grid => 5 x 5 matrix
-                        for m in range(scheduler.n_grid_rows):
-                            for n in range(scheduler.n_grid_cols):
-                                scheduler.epochs_grid[scheduler.curr_epoch][reg_row][reg_col][m][n] = reg_updates[m][n]
-
+                        region_coords = message['payload']['region_coords']
+                        new_region = message['payload']['region']
+                        scheduler.update_grid(region_coords, new_region)
                         n_worker_updates += 1
                     
-                    assign_tasks()
-                    scheduler.curr_epoch += 1
+                    await assign_tasks()
+                    scheduler.epoch += 1
+                
+                scheduler.status = 2
+            
+            # SEND RESULTS TO CLIENT
+
 
 
                     

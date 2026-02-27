@@ -24,7 +24,14 @@ MESSAGE = {
         'payload': {
             'message': ''
         } 
-    }
+    },
+
+    'task_complete' : {
+        'type': 'task_complete',
+        'payload': {
+            'new_region': ''
+        }
+    },
 }
 
 class Worker():
@@ -41,14 +48,16 @@ class Worker():
 
                 if message['type'] == 'task_assign':
                     await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task: {message['payload']['task']}'})
-                    self.task = message['payload']['task']
-                    self.meta = message['payload']['meta']
-                    self.process_task()
+                    new_region = self.process_task(message)
+                    await self.send(websocket, 'task_complete', **{'region': new_region, 'region_coords': message['payload']['region_coords']})
+
 
     def process_task(self):
-        new_region = heat.update_region(self.task, self.meta)
-        # this is where we start writing heat equation code.
-        # the worker should not need to know about how to do the calculations. It can call another class for that.
+        grid = ['payload']['grid']
+        region_coords = ['payload']['region_coords']
+        n_regions = ['payload']['n_regions']
+        n_cells = ['payload']['n_cells']
+        return heat.update_region(grid, region_coords, n_regions, n_cells)
     
     async def send(self, websocket, type, **kwargs):
         message = MESSAGE[type]
