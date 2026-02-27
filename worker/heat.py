@@ -2,7 +2,7 @@ import numpy as np
 
 def update_region(grid, region_coords, n_regions, n_cells):
 
-    region_plus_ghost = add_ghost_boundaries_to_region(grid, region_coords, n_regions, n_cells)
+    region_plus_ghost = add_ghost_boundaries_to_region(grid, region_coords, n_cells)
     n_cell_rows, n_cell_cols = n_cells
 
     K = 1 # scalar
@@ -61,7 +61,7 @@ def add_ghost_boundaries_to_region(grid, region_coords, n_cells):
     return region
     
 
-mock_grid = [[[np.arange(5) for _ in range(5)] for _ in range(3)] for _ in range(3)]
-print(update_region(mock_grid, (2,2), (3, 3), (5, 5)))
+# mock_grid = [[[np.arange(5) for _ in range(5)] for _ in range(3)] for _ in range(3)]
+# print(update_region(mock_grid, (2,2), (3, 3), (5, 5)))
 
         

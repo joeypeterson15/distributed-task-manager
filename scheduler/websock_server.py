@@ -16,9 +16,7 @@ import json
 MESSAGE = {
     'task_assign' : {
         'type': 'task_assign',
-        'payload': {
-            'task': '12345'
-        } 
+        'payload': {} 
     }
 }
 
@@ -36,41 +34,43 @@ async def server():
             if type == 'stdout':
                 print(f'{payload['message']}')
 
-            # broadcast tasks to workers once all workers are registered
-            if len(scheduler.workers) == scheduler.n_grid_cols * scheduler.n_grid_rows and scheduler.status == 0:
+            # broadcast tasks to workers once workers are registered
+            if len(scheduler.workers) == scheduler.n_regions and scheduler.status == 0:
+                print('n workers: ', (len(scheduler.workers)))
+                print('n regions:', scheduler.n_regions)
                 await assign_tasks()
                 scheduler.update_status(1)
+            print('assigned tasks')
             
-            # wait for worker updates, then reassign tasks when all workers done
+            # wait for worker updates => reassign tasks when all workers done
             while scheduler.status == 1:
-                while scheduler.epoch < scheduler.epochs:
+                print('in scheduler task assign while loop')
+                epoch = 0
+                while epoch < scheduler.epochs:
                     n_worker_updates = 0
                     while n_worker_updates < scheduler.n_regions:
-                    # workers will send updated regions here.
-                    #  payload:
-                        # worker region
-                        # region updated values
-                    # scheduler needs to update global grid, and send back new boundary conditions
+                    # update global grid
                         message = json.loads(await websocket.recv())
                         
                         region_coords = message['payload']['region_coords']
                         new_region = message['payload']['region']
-                        scheduler.update_grid(region_coords, new_region)
+                        scheduler.update_grid(region_coords, new_region, epoch)
                         n_worker_updates += 1
                     
-                    await assign_tasks()
-                    scheduler.epoch += 1
+                    await assign_tasks(epoch)
+                    epoch += 1
                 
-                scheduler.status = 2
+                scheduler.update_status(2)
+            print('result: ', scheduler.grid[3])
             
             # SEND RESULTS TO CLIENT
 
 
 
                     
-    async def assign_tasks():
-        for i, reg in enumerate(scheduler.regions):
-            payload = scheduler.gen_task_payload(reg)
+    async def assign_tasks(epoch=0):
+        for i, region_coord in enumerate(scheduler.region_coords):
+            payload = scheduler.gen_task_payload(region_coord, epoch)
             await send(scheduler.workers[i], 'task_assign', **payload)
 
 

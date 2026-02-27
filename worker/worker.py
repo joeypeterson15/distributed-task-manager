@@ -48,15 +48,15 @@ class Worker():
 
                 if message['type'] == 'task_assign':
                     await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task: {message['payload']['task']}'})
-                    new_region = self.process_task(message)
+                    new_region = self.process_task(message['payload'])
                     await self.send(websocket, 'task_complete', **{'region': new_region, 'region_coords': message['payload']['region_coords']})
 
 
-    def process_task(self):
-        grid = ['payload']['grid']
-        region_coords = ['payload']['region_coords']
-        n_regions = ['payload']['n_regions']
-        n_cells = ['payload']['n_cells']
+    def process_task(self, payload):
+        grid = payload['grid']
+        region_coords = payload['region_coords']
+        n_regions = payload['n_regions']
+        n_cells = payload['n_cells']
         return heat.update_region(grid, region_coords, n_regions, n_cells)
     
     async def send(self, websocket, type, **kwargs):

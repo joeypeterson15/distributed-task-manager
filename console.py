@@ -47,4 +47,4 @@ print(n)
 
 # print(collect_regions(3, 3))
 
-print([[] for _ in range(4)])
+print(10 // 1)
