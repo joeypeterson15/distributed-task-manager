@@ -1,18 +1,14 @@
 import numpy as np
 
-
 def update_region(grid, region_coords, n_regions, n_cells):
 
     region_plus_ghost = add_ghost_boundaries_to_region(grid, region_coords, n_regions, n_cells)
     n_cell_rows, n_cell_cols = n_cells
 
-    K = 1 #scalar constant
-    updated_region = np.zeros(shape=(n_cell_rows, n_cell_cols), dtype=int)
-    print('updated region: ', updated_region.shape)
+    K = 1 # scalar
+    next_region = np.zeros(shape=(n_cell_rows, n_cell_cols), dtype=int)
     for m in range(1, n_cell_rows):
-        for n in range(1, n_cell_cols):
-            # This value will work if neighboring cells are in the region. 
-            # If we're at the edge we need to go into other regions
+        for n in range(1, n_cell_cols): # no need to worry about left or right (ghost) cells
             
             # Discretized version of the heat equation. 
             value = region_plus_ghost[m][n] + \
@@ -22,23 +18,18 @@ def update_region(grid, region_coords, n_regions, n_cells):
               + region_plus_ghost[m][n + 1]
               - 4 * (region_plus_ghost[m][n]))
             
-            updated_region[m][n] = value
-    print(region_plus_ghost)
-    return updated_region
+            next_region[m][n] = value
+    # print(region_plus_ghost)
+    return next_region
 
-def add_ghost_boundaries_to_region(grid, region_coords, n_regions, n_cells):
-    # n_grid_rows, n_grid_cols = n_regions
+def add_ghost_boundaries_to_region(grid, region_coords, n_cells):
     n_cell_rows, n_cell_cols = n_cells
     region_r, region_c = region_coords
 
     grid = np.pad(grid, ((1,1), (1,1), (0,0), (0,0)))
-    print(grid.shape)
-    
-
     region = np.array(grid[region_r][region_c])
 
-    dir = [-1, 1]
-
+    dir = [-1, 1]    
     for dc in dir:
         adj_c = region_c + dc
 
@@ -52,7 +43,6 @@ def add_ghost_boundaries_to_region(grid, region_coords, n_regions, n_cells):
             col = adj_reg[:, 0:1] #(0:1 keeps the dimensions correct)
             region = np.hstack((region, col))
 
-        # REGION should now be padded on every side. So new region col length is n_cell_cols + 2. Same for rows
     for dr in dir:
         adj_r = region_r + dr
         
@@ -67,19 +57,11 @@ def add_ghost_boundaries_to_region(grid, region_coords, n_regions, n_cells):
             row = adj_reg[0:1, :] #(0:1 keeps the dimensions correct)
             row = np.pad(row, ((0,0),(1,1)))
             region = np.vstack((region, row))
-            # print('region:', region)
 
-        # add zero rows/cols to grid boundary regions
-        
-
-
-        # REGION should now be padded on every side. So new region col length is n_cell_cols + 2. Same for rows
-    print('region shape:', region.shape)
     return region
     
 
 mock_grid = [[[np.arange(5) for _ in range(5)] for _ in range(3)] for _ in range(3)]
-# print(add_ghost_boundaries_to_region(mock_grid, (2,2), (3, 3), (5, 5)))
 print(update_region(mock_grid, (2,2), (3, 3), (5, 5)))
 
         
