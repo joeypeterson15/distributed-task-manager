@@ -3,6 +3,7 @@ import asyncio
 from websockets.asyncio.server import serve
 from scheduler_class import Scheduler
 import json
+import visualizer
 
 # {
 #     sim_duration: seconds
@@ -52,6 +53,7 @@ async def server():
             scheduler.epoch += 1
             if scheduler.epoch == scheduler.epochs:
                 print('result: ', scheduler.grid[scheduler.epochs - 1])
+                visualizer.visualize(scheduler.grid[scheduler.epochs - 1])
                 return
             asyncio.create_task(assign_tasks_to_workers())
 
