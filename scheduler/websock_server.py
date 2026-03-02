@@ -34,43 +34,30 @@ async def server():
             if type == 'stdout':
                 print(f'{payload['message']}')
 
-            # broadcast tasks to workers once workers are registered
-            if len(scheduler.workers) == scheduler.n_regions and scheduler.status == 0:
-                print('n workers: ', (len(scheduler.workers)))
-                print('n regions:', scheduler.n_regions)
-                await assign_tasks()
-                scheduler.update_status(1)
-            print('assigned tasks')
-            
-            # wait for worker updates => reassign tasks when all workers done
-            while scheduler.status == 1:
-                print('in scheduler task assign while loop')
-                epoch = 0
-                while epoch < scheduler.epochs:
-                    n_worker_updates = 0
-                    while n_worker_updates < scheduler.n_regions:
-                    # update global grid
-                        message = json.loads(await websocket.recv())
-                        
-                        region_coords = message['payload']['region_coords']
-                        new_region = message['payload']['region']
-                        scheduler.update_grid(region_coords, new_region, epoch)
-                        n_worker_updates += 1
-                    
-                    await assign_tasks(epoch)
-                    epoch += 1
-                
-                scheduler.update_status(2)
-            print('result: ', scheduler.grid[3])
-            
-            # SEND RESULTS TO CLIENT
+            if type == 'task_complete':
+                await update_grid(payload)
 
 
+    async def update_grid(payload):
+        region_coords = payload['region_coords']
+        new_region = payload['region']
 
-                    
-    async def assign_tasks(epoch=0):
+        scheduler.update_grid(region_coords, new_region)
+        scheduler.n_worker_updates += 1
+
+        if scheduler.n_worker_updates == scheduler.n_regions:
+            print(f'Epoch {scheduler.epoch + 1} Complete')
+            print(scheduler.grid[scheduler.epochs - 1])
+            scheduler.n_worker_updates = 0
+            scheduler.epoch += 1
+            if scheduler.epoch == scheduler.epochs:
+                print('result: ', scheduler.grid[scheduler.epochs - 1])
+                return
+            asyncio.create_task(assign_tasks_to_workers())
+
+    async def assign_tasks_to_workers():
         for i, region_coord in enumerate(scheduler.region_coords):
-            payload = scheduler.gen_task_payload(region_coord, epoch)
+            payload = scheduler.gen_task_payload(region_coord)
             await send(scheduler.workers[i], 'task_assign', **payload)
 
 
@@ -81,6 +68,12 @@ async def server():
             scheduler.register_worker(websocket)
             print(f'Worker {id}: Registered')
 
+            # broadcast tasks to workers once workers are registered
+            if len(scheduler.workers) == scheduler.n_regions and scheduler.status == 0:
+                asyncio.create_task(assign_tasks_to_workers())
+                # scheduler.update_status(1)
+                print('assigned tasks')
+
         if name == 'client':
             tasks = payload['tasks']
             scheduler.register_client(websocket)
@@ -90,7 +83,8 @@ async def server():
          
     async def send(websocket, type, **kwargs):
         message = MESSAGE[type]
-        if kwargs: message['payload'] = kwargs
+        for key in kwargs.keys():
+            message['payload'][key] = kwargs[key]
         await websocket.send(json.dumps(message))
 
     async def main():

@@ -18,6 +18,7 @@ class Scheduler():
         self.time_interval = 1 #seconds
         self.epochs = self.sim_duration // self.time_interval
         self.epoch = 0
+        self.n_worker_updates = 0
         self.grid = self.gen_grid()
 
     def register_worker(self, websocket):
@@ -35,27 +36,25 @@ class Scheduler():
     def assign_workers(self):
         return
     
-    def update_grid(self, region_coords, new_region, epoch):
+    def update_grid(self, region_coords, new_region):
         reg_row, reg_col = region_coords
-        self.grid[epoch][reg_row][reg_col] = new_region
+        self.grid[self.epoch][reg_row][reg_col] = new_region
     
     def gen_grid(self):
-        # grid = [[[[0 for _ in range(self.n_cells)] for _ in range(self.n_cells)] for _ in range(self.n_grid_cols)] for _ in range(self.n_grid_rows)]
-        # return [grid] * self.epochs
-        # grid = np.zeros(shape=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells), dtype=int)
-        grid = np.random.randint(0, 101, size=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells), dtype=int)
+        rng = np.random.default_rng()
+        grid = rng.random(size=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
         grid = grid / 100
         return grid
     
     def collect_regions(self, n_cols, n_rows):
         return [[m,n] for n in range(n_cols) for m in range(n_rows)]
     
-    def gen_task_payload(self, region_coord, epoch):
+    def gen_task_payload(self, region_coord):
         return {
-                'grid': self.grid[epoch],
+                'grid': self.grid[self.epoch].tolist(),
                 'region_coords': region_coord,
                 'n_regions': (self.n_grid_cols, self.n_grid_rows),
-                'n_cells': self.n_cells
+                'n_cells': (self.n_cells, self.n_cells)
             }
 
 
