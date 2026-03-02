@@ -5,15 +5,6 @@ from scheduler_class import Scheduler
 import json
 import visualizer
 
-# {
-#     sim_duration: seconds
-#     time interval: seconds
-#     grid_dim: N X N => (workers = N)
-#     region_dim: how many cells occupy each grid(for a 3 X 3 grid, region dim could be 4 x 4 inside each region)
-#     initial conditions: List[List => what sections(0 -> N, 0 -> N) of the grid have heat in them] => 
-
-# }
-
 MESSAGE = {
     'task_assign' : {
         'type': 'task_assign',
