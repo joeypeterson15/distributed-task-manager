@@ -2,11 +2,11 @@ import numpy as np
 
 def update_region(grid, region_coords, n_regions, n_cells):
 
-    region_plus_ghost = add_ghost_boundaries_to_region(grid, region_coords, n_cells)
+    region_plus_ghost = add_ghost_boundaries(grid, region_coords, n_cells)
     n_cell_rows, n_cell_cols = n_cells
 
     K = 1 # scalar
-    next_region = np.zeros(shape=(n_cell_rows, n_cell_cols), dtype=int)
+    next_region = np.zeros(shape=(n_cell_rows, n_cell_cols), dtype='float32')
     for m in range(1, n_cell_rows):
         for n in range(1, n_cell_cols): # no need to worry about left or right (ghost) cells
             
@@ -22,7 +22,7 @@ def update_region(grid, region_coords, n_regions, n_cells):
     # print(region_plus_ghost)
     return next_region
 
-def add_ghost_boundaries_to_region(grid, region_coords, n_cells):
+def add_ghost_boundaries(grid, region_coords, n_cells):
     n_cell_rows, n_cell_cols = n_cells
     region_r, region_c = region_coords
 

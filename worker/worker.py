@@ -5,6 +5,8 @@ import json
 import websockets
 import asyncio
 import heat
+import multiprocessing
+import concurrent.futures
 
 URI = 'ws://localhost:8001'
 load_dotenv()
@@ -38,7 +40,7 @@ class Worker():
     def __init__(self, id):
         self.id = id
 
-    async def connect(self):
+    async def connect(self, executor):
         async with websockets.connect(URI) as websocket:
             await self.send(websocket, 'register', **{'id': f'{self.id}'})
 
@@ -47,9 +49,14 @@ class Worker():
                 message = json.loads(message)
 
                 if message['type'] == 'task_assign':
-                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task: {message['payload']['task']}'})
-                    new_region = self.process_task(message['payload'])
-                    await self.send(websocket, 'task_complete', **{'region': new_region, 'region_coords': message['payload']['region_coords']})
+                    loop = asyncio.get_running_loop()
+                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task'})
+                    new_region = await loop.run_in_executor(
+                        executor,
+                        self.process_task,
+                        message['payload']
+                    )
+                    await self.send(websocket, 'task_complete', **{'region': new_region.tolist(), 'region_coords': message['payload']['region_coords']})
 
 
     def process_task(self, payload):
@@ -66,11 +73,11 @@ class Worker():
         await websocket.send(json.dumps(message))
 
 
-async def gen_workers(n):
+async def gen_workers(n, executor):
     workers = []
     for id in range(n):
         w = Worker(id)
-        workers.append(w.connect())
+        workers.append(w.connect(executor))
     await asyncio.gather(*workers)
 
 
@@ -78,5 +85,5 @@ if __name__ == "__main__":
     n_workers = 1
     if len(sys.argv) > 1:
         n_workers = int(sys.argv[1])
-    
-    asyncio.run(gen_workers(n_workers))
+    executor = concurrent.futures.ProcessPoolExecutor()
+    asyncio.run(gen_workers(n_workers, executor))
