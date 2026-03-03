@@ -39,7 +39,7 @@ async def server():
 
         if scheduler.n_worker_updates == scheduler.n_regions:
             print(f'Epoch {scheduler.epoch + 1} Complete')
-            print(scheduler.grid[scheduler.epochs - 1])
+            # print(scheduler.grid[scheduler.epochs - 1])
             scheduler.n_worker_updates = 0
             scheduler.epoch += 1
 

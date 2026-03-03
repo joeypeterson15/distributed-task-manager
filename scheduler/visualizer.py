@@ -5,7 +5,7 @@ import numpy as np
 def visualize(grid):
     reshaped_grid = []
     for epoch in grid:
-        reshaped_grid.append(np.reshape(epoch, (50,50)))
+        reshaped_grid.append(np.reshape(epoch, (80,80)))
     
     fig, ax = plt.subplots()
     im = ax.imshow(reshaped_grid[0], cmap='cool', interpolation='nearest')

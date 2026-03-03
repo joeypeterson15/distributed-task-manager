@@ -9,8 +9,8 @@ class Scheduler():
         self.configure()
 
     def configure(self):
-        self.n_grid_cols = 5
-        self.n_grid_rows = 5
+        self.n_grid_cols = 8
+        self.n_grid_rows = 8
         self.n_cells = 10
         self.n_regions = self.n_grid_cols * self.n_grid_rows
         self.region_coords = self.collect_regions(self.n_grid_cols, self.n_grid_rows)
@@ -43,12 +43,11 @@ class Scheduler():
     def gen_grid(self):
         rng = np.random.default_rng()
         grid = rng.random(size=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
-        # grid = grid / 100
-        # grid = np.ones(shape=(self.epochs,3,3,5,5), dtype='float32')
+        # grid = np.ones(shape=(self.epochs,2,2,2,2), dtype='float32')
         return grid
     
     def collect_regions(self, n_cols, n_rows):
-        return [[m,n] for n in range(n_cols) for m in range(n_rows)]
+        return [[r, c] for r in range(n_rows) for c in range(n_cols)]
     
     def gen_task_payload(self, region_coord):
         return {
