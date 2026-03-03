@@ -11,12 +11,12 @@ def update_region(grid, region_coords, n_regions, n_cells):
         for n in range(1, n_cell_cols): # no need to worry about left or right (ghost) cells
             
             # Discretized version of the heat equation. 
-            value = region_plus_ghost[m][n] + \
+            value = (region_plus_ghost[m][n] +
             K * (region_plus_ghost[m - 1][n]
               + region_plus_ghost[m + 1][n]
               + region_plus_ghost[m][n - 1]
               + region_plus_ghost[m][n + 1]
-              - 4 * (region_plus_ghost[m][n]))
+              - 4 * (region_plus_ghost[m][n])))
 
             next_region[m][n] = value
     # print(region_plus_ghost)
@@ -59,9 +59,4 @@ def add_ghost_boundaries(grid, region_coords, n_cells):
             region = np.vstack((region, row))
 
     return region
-    
-
-# mock_grid = [[[np.arange(5) for _ in range(5)] for _ in range(3)] for _ in range(3)]
-# print(update_region(mock_grid, (2,2), (3, 3), (5, 5)))
-
         

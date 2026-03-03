@@ -42,8 +42,9 @@ class Scheduler():
     
     def gen_grid(self):
         rng = np.random.default_rng()
-        grid = rng.random(size=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
+        # grid = rng.random(size=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
         # grid = grid / 100
+        grid = np.ones(shape=(self.epochs,3,3,5,5), dtype='float32')
         return grid
     
     def collect_regions(self, n_cols, n_rows):

@@ -42,9 +42,14 @@ async def server():
             print(scheduler.grid[scheduler.epochs - 1])
             scheduler.n_worker_updates = 0
             scheduler.epoch += 1
+
+            # if scheduler.epoch == scheduler.epochs - 2:
+            #     print('result: ', scheduler.grid[scheduler.epochs - 1])
+            #     visualizer.visualize(scheduler.grid[scheduler.epochs - 1])
+
             if scheduler.epoch == scheduler.epochs:
                 print('result: ', scheduler.grid[scheduler.epochs - 1])
-                visualizer.visualize(scheduler.grid[scheduler.epochs - 1])
+                visualizer.visualize(scheduler.grid)
                 return
             asyncio.create_task(assign_tasks_to_workers())
 
