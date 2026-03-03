@@ -9,9 +9,9 @@ class Scheduler():
         self.configure()
 
     def configure(self):
-        self.n_grid_cols = 3
-        self.n_grid_rows = 3
-        self.n_cells = 5
+        self.n_grid_cols = 5
+        self.n_grid_rows = 5
+        self.n_cells = 10
         self.n_regions = self.n_grid_cols * self.n_grid_rows
         self.region_coords = self.collect_regions(self.n_grid_cols, self.n_grid_rows)
         self.sim_duration = 30 #seconds
@@ -38,7 +38,7 @@ class Scheduler():
     
     def update_grid(self, region_coords, new_region):
         reg_row, reg_col = region_coords
-        self.grid[self.epoch][reg_row][reg_col] = new_region
+        self.grid[self.epoch + 1][reg_row][reg_col] = new_region
     
     def gen_grid(self):
         rng = np.random.default_rng()

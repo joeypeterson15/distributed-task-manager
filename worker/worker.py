@@ -62,9 +62,8 @@ class Worker():
     def process_task(self, payload):
         grid = payload['grid']
         region_coords = payload['region_coords']
-        n_regions = payload['n_regions']
         n_cells = payload['n_cells']
-        return heat.update_region(grid, region_coords, n_regions, n_cells)
+        return heat.update_region(grid, region_coords, n_cells)
     
     async def send(self, websocket, type, **kwargs):
         message = MESSAGE[type]

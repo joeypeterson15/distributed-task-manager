@@ -43,11 +43,7 @@ async def server():
             scheduler.n_worker_updates = 0
             scheduler.epoch += 1
 
-            # if scheduler.epoch == scheduler.epochs - 2:
-            #     print('result: ', scheduler.grid[scheduler.epochs - 1])
-            #     visualizer.visualize(scheduler.grid[scheduler.epochs - 1])
-
-            if scheduler.epoch == scheduler.epochs:
+            if scheduler.epoch == scheduler.epochs - 1:
                 print('result: ', scheduler.grid[scheduler.epochs - 1])
                 visualizer.visualize(scheduler.grid)
                 return
