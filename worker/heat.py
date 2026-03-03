@@ -7,8 +7,8 @@ def update_region(grid, region_coords, n_regions, n_cells):
 
     K = 1 # scalar
     next_region = np.zeros(shape=(n_cell_rows, n_cell_cols), dtype='float32')
-    for m in range(1, n_cell_rows):
-        for n in range(1, n_cell_cols): # no need to worry about left or right (ghost) cells
+    for m in range(1, n_cell_rows + 1):
+        for n in range(1, n_cell_cols + 1): # no need to worry about left or right (ghost) cells
             
             # Discretized version of the heat equation. 
             value = (region_plus_ghost[m][n] +
@@ -18,7 +18,7 @@ def update_region(grid, region_coords, n_regions, n_cells):
               + region_plus_ghost[m][n + 1]
               - 4 * (region_plus_ghost[m][n])))
 
-            next_region[m][n] = value
+            next_region[m - 1][n - 1] = value
     # print(region_plus_ghost)
     return next_region
 

@@ -15,7 +15,7 @@ def visualize(grid):
 
         return im
 
-    ani = animation.FuncAnimation(fig, update, frames=np.arange(0, 10, 1),
-                                interval=100)
+    ani = animation.FuncAnimation(fig, update, frames=np.arange(0, len(grid), 1),
+                                interval=500)
 
     plt.show()

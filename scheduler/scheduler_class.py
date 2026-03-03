@@ -14,7 +14,7 @@ class Scheduler():
         self.n_cells = 5
         self.n_regions = self.n_grid_cols * self.n_grid_rows
         self.region_coords = self.collect_regions(self.n_grid_cols, self.n_grid_rows)
-        self.sim_duration = 10 #seconds
+        self.sim_duration = 30 #seconds
         self.time_interval = 1 #seconds
         self.epochs = self.sim_duration // self.time_interval
         self.epoch = 0
@@ -42,9 +42,9 @@ class Scheduler():
     
     def gen_grid(self):
         rng = np.random.default_rng()
-        # grid = rng.random(size=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
+        grid = rng.random(size=(self.epochs, self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
         # grid = grid / 100
-        grid = np.ones(shape=(self.epochs,3,3,5,5), dtype='float32')
+        # grid = np.ones(shape=(self.epochs,3,3,5,5), dtype='float32')
         return grid
     
     def collect_regions(self, n_cols, n_rows):
