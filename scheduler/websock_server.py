@@ -4,6 +4,7 @@ from websockets.asyncio.server import serve
 from scheduler_class import Scheduler
 import json
 import visualizer
+import numpy as np
 
 MESSAGE = {
     'task_assign' : {
@@ -32,7 +33,7 @@ async def server():
 
     async def update_grid(payload):
         region_coords = payload['region_coords']
-        new_region = payload['region']
+        new_region = np.array(payload['region'], dtype='float32')
 
         scheduler.update_grid(region_coords, new_region)
         scheduler.n_worker_updates += 1
@@ -44,9 +45,10 @@ async def server():
             scheduler.epoch += 1
 
             if scheduler.epoch == scheduler.epochs - 1:
-                print('result: ', scheduler.grid[scheduler.epochs - 1])
+                # print('result: ', scheduler.grid)
                 visualizer.visualize(scheduler.grid)
                 return
+            # assign_tasks_to_workers()
             asyncio.create_task(assign_tasks_to_workers())
 
     async def assign_tasks_to_workers():

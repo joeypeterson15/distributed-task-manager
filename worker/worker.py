@@ -7,6 +7,7 @@ import asyncio
 import heat
 import multiprocessing
 import concurrent.futures
+import numpy as np
 
 URI = 'ws://localhost:8001'
 load_dotenv()
@@ -60,7 +61,7 @@ class Worker():
 
 
     def process_task(self, payload):
-        grid = payload['grid']
+        grid = np.array(payload['grid'], dtype='float32')
         region_coords = payload['region_coords']
         n_cells = payload['n_cells']
         return heat.update_region(grid, region_coords, n_cells)
