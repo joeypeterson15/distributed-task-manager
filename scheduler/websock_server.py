@@ -5,6 +5,9 @@ from scheduler_class import Scheduler
 import json
 import visualizer
 import numpy as np
+import os
+import time
+
 
 MESSAGE = {
     'task_assign' : {
@@ -15,7 +18,6 @@ MESSAGE = {
 
 async def server():
     scheduler = Scheduler()
-
     async def handler(websocket):
         while True:
             message = json.loads(await websocket.recv())
@@ -40,12 +42,11 @@ async def server():
 
         if scheduler.n_worker_updates == scheduler.n_regions:
             print(f'Epoch {scheduler.epoch + 1} Complete')
-            # print(scheduler.grid[scheduler.epochs - 1])
             scheduler.n_worker_updates = 0
             scheduler.epoch += 1
 
             if scheduler.epoch == scheduler.epochs - 1:
-                # print('result: ', scheduler.grid)
+                print(f'Time elapsed: {(scheduler.time):.4f}')
                 visualizer.visualize(scheduler.grid)
                 return
             # assign_tasks_to_workers()
@@ -66,6 +67,7 @@ async def server():
 
             # broadcast tasks to workers once workers are registered
             if len(scheduler.workers) == scheduler.n_regions and scheduler.status == 0:
+                scheduler.time = time.perf_counter()
                 asyncio.create_task(assign_tasks_to_workers())
                 # scheduler.update_status(1)
                 print('assigned tasks')

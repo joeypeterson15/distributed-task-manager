@@ -6,7 +6,7 @@ def visualize(grid):
     reshaped_grid = []
     for epoch in grid:
         epoch = np.transpose(epoch, (0, 2, 1, 3))
-        reshaped_grid.append(np.reshape(epoch, (80,80)))
+        reshaped_grid.append(np.reshape(epoch, (50,50)))
     # print('reshaped grid', reshaped_grid)
     
     fig, ax = plt.subplots()
@@ -18,6 +18,7 @@ def visualize(grid):
         return im
 
     ani = animation.FuncAnimation(fig, update, frames=np.arange(0, len(grid), 1),
-                                interval=250)
+                                interval=750)
 
     plt.show()
+ 

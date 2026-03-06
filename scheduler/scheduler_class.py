@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 class Scheduler():    
     def __init__(self):
@@ -9,8 +10,8 @@ class Scheduler():
         self.configure()
 
     def configure(self):
-        self.n_grid_cols = 8
-        self.n_grid_rows = 8
+        self.n_grid_cols = 5
+        self.n_grid_rows = 5
         self.n_cells = 10
         self.n_regions = self.n_grid_cols * self.n_grid_rows
         self.region_coords = self.collect_regions(self.n_grid_cols, self.n_grid_rows)

@@ -5,7 +5,6 @@ import json
 import websockets
 import asyncio
 import heat
-import multiprocessing
 import concurrent.futures
 import numpy as np
 
@@ -40,6 +39,9 @@ MESSAGE = {
 class Worker():
     def __init__(self, id):
         self.id = id
+        self.last_region = None
+        self.region_coords = ()
+
 
     async def connect(self, executor):
         async with websockets.connect(URI) as websocket:
