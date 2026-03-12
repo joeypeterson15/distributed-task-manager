@@ -39,37 +39,42 @@ async def server():
 
         scheduler.update_grid(region_coords, new_region)
         scheduler.n_worker_updates += 1
-
+        # INSTEAD OF SENDING UPDATES WHEN ALL WORKERS ARE DONE
+        #   CHECK IF THE WORKERS BOUNDARIES ARE PRESENT
+        #       IF WORKERS BOUNDARIES ARE UPDATED THEN UPDATE REGION BOUNDARIES AND GRID AND SEND NEIGHBOR BOUNDARIES BACK
+        #       ELSE JUST UPDATE REGION BOUNDARIES AND CONTINUE LISTENING
         if scheduler.n_worker_updates == scheduler.n_regions:
             print(f'Epoch {scheduler.epoch + 1} Complete')
             scheduler.n_worker_updates = 0
             scheduler.epoch += 1
 
             if scheduler.epoch == scheduler.epochs - 1:
+
                 print(f'Time elapsed: {(scheduler.time):.4f}')
+
                 visualizer.visualize(scheduler.grid)
                 return
-            # assign_tasks_to_workers()
             asyncio.create_task(assign_tasks_to_workers())
 
     async def assign_tasks_to_workers():
-        for i, region_coord in enumerate(scheduler.region_coords):
-            payload = scheduler.gen_task_payload(region_coord)
-            await send(scheduler.workers[i], 'task_assign', **payload)
+        for i, id in enumerate(scheduler.workers.keys()):
+            websocket, assigned_region = scheduler.workers[id]
+            payload = scheduler.gen_task_payload(assigned_region)
+            await send(websocket, 'task_assign', **payload)
 
 
     async def register(websocket, payload):
         name,id = payload['name'], payload['id']
 
         if name == 'worker':
-            scheduler.register_worker(websocket)
+            scheduler.register_worker(websocket, id)
             print(f'Worker {id}: Registered')
 
             # broadcast tasks to workers once workers are registered
             if len(scheduler.workers) == scheduler.n_regions and scheduler.status == 0:
                 scheduler.time = time.perf_counter()
+                scheduler.assign_regions_to_workers()
                 asyncio.create_task(assign_tasks_to_workers())
-                # scheduler.update_status(1)
                 print('assigned tasks')
 
         if name == 'client':
