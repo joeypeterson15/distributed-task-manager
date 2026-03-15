@@ -7,7 +7,6 @@ class Scheduler():
         self.client = ''
         self.workers = collections.defaultdict(list)
         self.task = ''
-        # self.status = 0
         self.configure()
 
     def configure(self):
@@ -15,7 +14,7 @@ class Scheduler():
         self.n_grid_rows = 3
         self.n_cells = 4
         self.n_regions = self.n_grid_cols * self.n_grid_rows
-        self.region_coords = self.collect_regions(self.n_grid_cols, self.n_grid_rows)
+        self.regions = self.collect_regions(self.n_grid_cols, self.n_grid_rows)
         self.collect_adj_regions()
         self.sim_duration = 25 #seconds
         self.time_interval = 1 #seconds
@@ -23,8 +22,6 @@ class Scheduler():
         self.epoch = 0
         self.n_worker_updates = 0
         self.grid = self.gen_initial_grid()
-        # self.gen_boundaries()
-        # initialize to true for initial worker assignment(boundaries are already ready)
         self.updated_regions = [[True for _ in range(self.n_grid_cols)] for _ in range(self.n_grid_rows)]
 
     def register_worker(self, websocket, id):
@@ -32,8 +29,7 @@ class Scheduler():
 
     def assign_regions_to_workers(self):
         for i, id in enumerate(self.workers.keys()):
-            self.workers[id].append(self.region_coords[i])
-            # assign adjacent regions also
+            self.workers[id].append(self.regions[i])
             self.workers[id].append(self.adjacent_regions[i])
 
     def register_client(self, websocket):
@@ -44,9 +40,6 @@ class Scheduler():
 
     def update_status(self, status_num):
         self.status = status_num
-
-    def assign_workers(self):
-        return
     
     def update_grid(self, region, new_region_values):
         reg_row, reg_col = region
@@ -67,46 +60,40 @@ class Scheduler():
         for row in range(self.n_grid_rows):
             for col in range(self.n_grid_cols):
                 for dr, dc in dir:
-                    self.adjacent_regions[row][col].append((dr,dc))
+                    self.adjacent_regions[row][col].append((row + dr,col + dc))
         self.adjacent_regions = np.reshape(self.adjacent_regions, shape=(self.n_grid_cols * self.n_grid_rows, 4, -1))
     
     def collect_region_boundaries(self, region):
         zeros = np.zeros((self.n_cells))
         r, c = region
 
-        if r == 0:
-            # reg_boundaries[BOUNDARY_IDX['rt']] = zeros
-            rtop = zeros
-        else:
-            rtop = self.grid[0][r - 1][c][self.n_cells - 1][:]
-            # reg_boundaries[BOUNDARY_IDX['rt']] = self.boundaries[row - 1][col][BOUNDARY_IDX['rb']]
+        rtop = zeros if r == 0 else self.grid[self.epoch][r - 1][c][self.n_cells - 1][:]
 
-        if r == self.n_grid_rows - 1:
-            # reg_boundaries[BOUNDARY_IDX['rb']] = zeros
-            rbot = zeros
-        else:
-            rbot = self.grid[0][r + 1][c][0][:]
-            # reg_boundaries[BOUNDARY_IDX['rb']] = self.boundaries[row + 1][col][BOUNDARY_IDX['rt']]
+        rbot = zeros if r == (self.n_grid_rows - 1) else self.grid[self.epoch][r + 1][c][0][:]
 
-        if c == 0:
-            cleft = zeros
-            # reg_boundaries[BOUNDARY_IDX['cl']] = zeros
-        else:
-            cleft = self.grid[0][r][c - 1][:][self.n_cells - 1]
+        cleft = zeros if c == 0 else self.grid[self.epoch][r][c - 1][:][self.n_cells - 1]
 
-            # reg_boundaries[BOUNDARY_IDX['cl']] = self.boundaries[row][col - 1][BOUNDARY_IDX['cr']]
-    
-        if c == self.n_grid_cols - 1:
-            # reg_boundaries[BOUNDARY_IDX['cr']] = zeros
-            cright = zeros
-        else:
-            cright = self.grid[0][r][c + 1][:][0]
+        cright = zeros if c == (self.n_grid_cols - 1) else self.grid[self.epoch][r][c + 1][:][0]
 
-            # reg_boundaries[BOUNDARY_IDX['cr']] = self.boundaries[row][col + 1][BOUNDARY_IDX['cl']]
-        
         return [rtop, rbot, cleft, cright]
     
-    def gen_task_payload(self, region):
+    def check_task_ready_for_assignment(self):
+        updated_regions = set(np.where(self.updated_regions))
+        tasks = []
+        for id in self.workers.keys():
+            websocket, assigned_region, adjacent_regions = self.workers[id]
+            updated_adj_count = 0
+            for r,c in adjacent_regions:
+                if (r,c) in updated_regions:
+                    updated_adj_count += 1
+                elif r < 0 or r > len(self.n_grid_rows - 1) or c < 0 or c > len(self.n_grid_cols - 1):
+                    updated_adj_count += 1
+            if updated_adj_count == 4:
+                payload = self.task_payload(assigned_region)
+                tasks.append([websocket, payload])
+        return tasks
+    
+    def task_payload(self, region):
         boundaries = self.collect_region_boundaries(region)
         payload = {
                     'boundaries': boundaries,
@@ -115,62 +102,7 @@ class Scheduler():
                     'n_cells': (self.n_cells, self.n_cells)
                 }
         if self.epoch == 0:
-            initial_region_values = self.grid[self.epoch][region[0]][region[1]].tolist()
-            payload['initial_region_values'] = initial_region_values
+            starting_values = self.grid[self.epoch][region[0]][region[1]].tolist()
+            payload['initial_region_values'] = starting_values
         
         return payload
-        
-    # BOUNDARY_IDX = {
-    #     'rt': 0,
-    #     'rb': 1,
-    #     'cl': 2,
-    #     'cb': 3
-    # }
-
-    # def gen_boundaries(self):
-    #     # each region contains its boundaries -> region =[[rowup], [rowbot], [cleft], [cright]]
-    #     self.boundaries = [[[] for _ in range(self.n_grid_cols)] for _ in range(self.n_grid_rows)]
-    #     for r in range(self.n_grid_rows):
-    #         for c in range(self.n_grid_cols):
-    #             rtop = self.grid[0][r][c][0][:]
-    #             rbot = self.grid[0][r][c][self.n_cells - 1][:]
-    #             cleft = self.grid[0][r][c][:][0]
-    #             cright = self.grid[0][r][c][:][self.n_cells - 1]
-    #             self.boundaries[r][c].append(list(zip(rtop,rbot,cleft,cright)))
-
-    # def collect_region_boundaries(self, region):
-    #     zeros = np.zeros((self.n_cells))
-    #     row, col = region
-    #     reg_boundaries = [[] for _ in range(4)]        
-
-    #     if row == 0:
-    #         reg_boundaries[BOUNDARY_IDX['rt']] = zeros
-    #     else:
-    #         reg_boundaries[BOUNDARY_IDX['rt']] = self.boundaries[row - 1][col][BOUNDARY_IDX['rb']]
-
-    #     if row == self.n_grid_rows - 1:
-    #         reg_boundaries[BOUNDARY_IDX['rb']] = zeros
-    #     else:
-    #         reg_boundaries[BOUNDARY_IDX['rb']] = self.boundaries[row + 1][col][BOUNDARY_IDX['rt']]
-
-    #     if col == 0:
-    #         reg_boundaries[BOUNDARY_IDX['cl']] = zeros
-    #     else:
-    #         reg_boundaries[BOUNDARY_IDX['cl']] = self.boundaries[row][col - 1][BOUNDARY_IDX['cr']]
-    
-    #     if col == self.n_grid_cols - 1:
-    #         reg_boundaries[BOUNDARY_IDX['cr']] = zeros
-    #     else:
-    #         reg_boundaries[BOUNDARY_IDX['cr']] = self.boundaries[row][col + 1][BOUNDARY_IDX['cl']]
-        
-    #     return reg_boundaries
-    
-    # def update_boundaries(self, region, region_vals):
-    #     r, c = region
-    #     rtop = region_vals[0][:]
-    #     rbot = region_vals[self.n_cells - 1][:]
-    #     cleft = region_vals[:][0]
-    #     cright = region_vals[:][self.n_cells - 1]
-    #     self.boundaries[r][c] = [list(zip(rtop,rbot,cleft,cright))]
-    #     self.updated_boundaries[r][c] = True
-    #     return

@@ -31,6 +31,6 @@ dir = [(0,1), (0,-1), (1,0), (-1,0)]
 for row in range(n_grid_rows):
     for col in range(n_grid_cols):
         for dr, dc in dir:
-            adjacent_regions[row][col].append((dr,dc))
+            adjacent_regions[row][col].append((row + dr,col + dc))
 adjacent_regions = np.reshape(adjacent_regions, shape=(9, 4, -1))
 print(adjacent_regions)

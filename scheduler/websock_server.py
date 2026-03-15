@@ -42,12 +42,12 @@ async def server():
         #       IF WORKERS BOUNDARIES ARE UPDATED THEN UPDATE REGION BOUNDARIES AND GRID AND SEND NEIGHBOR BOUNDARIES BACK
         #       ELSE JUST UPDATE REGION BOUNDARIES AND CONTINUE LISTENING
         scheduler.update_grid(region, region_vals)
-        assign_tasks_to_workers()
+
         if scheduler.n_worker_updates == scheduler.n_regions:
             print(f'Epoch {scheduler.epoch + 1} Complete')
             scheduler.n_worker_updates = 0
             scheduler.epoch += 1
-            scheduler.updated_boundaries[:][:] = False
+            scheduler.updated_regions[:][:] = False
 
             if scheduler.epoch == scheduler.epochs - 1:
 
@@ -59,19 +59,10 @@ async def server():
             asyncio.create_task(assign_tasks_to_workers())
 
     async def assign_tasks_to_workers():
-        updated_boundaries = set(np.where(scheduler.updated_boundaries))
-        for i, id in enumerate(scheduler.workers.keys()):
-            websocket, assigned_region, adjacent_regions = scheduler.workers[id]
-            updated_adj_count = 0
-            for r,c in adjacent_regions:
-                if (r,c) in updated_boundaries:
-                    updated_adj_count += 1
-                if r < 0 or r > len(scheduler.n_grid_rows - 1) or c < 0 or c > len(scheduler.n_grid_cols - 1):
-                    updated_adj_count += 1
-            if updated_adj_count == 4:
-                payload = scheduler.gen_task_payload(assigned_region)
-                await send(websocket, 'task_assign', **payload)
-                scheduler.n_worker_updates += 1
+        tasks = scheduler.check_task_ready_for_assignment()
+        for websocket, payload in tasks:
+            await send(websocket, 'task_assign', **payload)
+            scheduler.n_worker_updates += 1
 
 
 
@@ -87,7 +78,6 @@ async def server():
                 scheduler.time = time.perf_counter()
                 scheduler.assign_regions_to_workers()
                 asyncio.create_task(assign_tasks_to_workers())
-                print('assigned tasks')
 
         if name == 'client':
             tasks = payload['tasks']
