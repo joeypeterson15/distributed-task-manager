@@ -41,14 +41,13 @@ async def server():
         #   CHECK IF THE WORKERS BOUNDARIES ARE PRESENT
         #       IF WORKERS BOUNDARIES ARE UPDATED THEN UPDATE REGION BOUNDARIES AND GRID AND SEND NEIGHBOR BOUNDARIES BACK
         #       ELSE JUST UPDATE REGION BOUNDARIES AND CONTINUE LISTENING
-        scheduler.update_boundaries(region)
         scheduler.update_grid(region, region_vals)
         assign_tasks_to_workers()
-        scheduler.n_worker_updates += 1
         if scheduler.n_worker_updates == scheduler.n_regions:
             print(f'Epoch {scheduler.epoch + 1} Complete')
             scheduler.n_worker_updates = 0
             scheduler.epoch += 1
+            scheduler.updated_boundaries[:][:] = False
 
             if scheduler.epoch == scheduler.epochs - 1:
 
@@ -56,6 +55,7 @@ async def server():
 
                 visualizer.visualize(scheduler.grid)
                 return
+
             asyncio.create_task(assign_tasks_to_workers())
 
     async def assign_tasks_to_workers():
@@ -63,13 +63,16 @@ async def server():
         for i, id in enumerate(scheduler.workers.keys()):
             websocket, assigned_region, adjacent_regions = scheduler.workers[id]
             updated_adj_count = 0
-            adjacent_regions = set(adjacent_regions)
-            for adj_reg in adjacent_regions:
-                if adj_reg in updated_boundaries:
+            for r,c in adjacent_regions:
+                if (r,c) in updated_boundaries:
+                    updated_adj_count += 1
+                if r < 0 or r > len(scheduler.n_grid_rows - 1) or c < 0 or c > len(scheduler.n_grid_cols - 1):
                     updated_adj_count += 1
             if updated_adj_count == 4:
                 payload = scheduler.gen_task_payload(assigned_region)
                 await send(websocket, 'task_assign', **payload)
+                scheduler.n_worker_updates += 1
+
 
 
     async def register(websocket, payload):
