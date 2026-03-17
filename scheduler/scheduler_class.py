@@ -2,6 +2,8 @@ import numpy as np
 import time
 import collections
 
+N_NEIGHBORS = 4
+
 class Scheduler():    
     def __init__(self):
         self.client = ''
@@ -88,7 +90,7 @@ class Scheduler():
                     updated_adj_count += 1
                 elif r < 0 or r > len(self.n_grid_rows - 1) or c < 0 or c > len(self.n_grid_cols - 1):
                     updated_adj_count += 1
-            if updated_adj_count == 4:
+            if updated_adj_count == N_NEIGHBORS:
                 payload = self.task_payload(assigned_region)
                 tasks.append([websocket, payload])
         return tasks

@@ -25,12 +25,19 @@ import time
 # print(np.where(boolean_matrix)[0][0])
 
 
-n_grid_cols, n_grid_rows = 3,3
-adjacent_regions=[[[] for _ in range(n_grid_cols)] for _ in range(n_grid_rows)]
-dir = [(0,1), (0,-1), (1,0), (-1,0)]
-for row in range(n_grid_rows):
-    for col in range(n_grid_cols):
-        for dr, dc in dir:
-            adjacent_regions[row][col].append((row + dr,col + dc))
-adjacent_regions = np.reshape(adjacent_regions, shape=(9, 4, -1))
-print(adjacent_regions)
+# n_grid_cols, n_grid_rows = 3,3
+# adjacent_regions=[[[] for _ in range(n_grid_cols)] for _ in range(n_grid_rows)]
+# dir = [(0,1), (0,-1), (1,0), (-1,0)]
+# for row in range(n_grid_rows):
+#     for col in range(n_grid_cols):
+#         for dr, dc in dir:
+#             adjacent_regions[row][col].append((row + dr,col + dc))
+# adjacent_regions = np.reshape(adjacent_regions, shape=(9, 4, -1))
+# print(adjacent_regions)
+
+import heapq
+count = {1: 2, 5:8, 6:7}
+count = [(count[num], num) for num in count.keys()]
+print(count)
+heapq.heapify(count)
+print(count)

@@ -39,9 +39,8 @@ MESSAGE = {
 class Worker():
     def __init__(self, id):
         self.id = id
-        self.last_region = None
-        self.region_coords = ()
-
+        self.region = None
+        self.region_vals = []
 
     async def connect(self, executor):
         async with websockets.connect(URI) as websocket:
@@ -53,7 +52,7 @@ class Worker():
 
                 if message['type'] == 'task_assign':
                     loop = asyncio.get_running_loop()
-                    await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task'})
+                    # await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task'})
                     new_region = await loop.run_in_executor(
                         executor,
                         self.process_task,
@@ -63,10 +62,9 @@ class Worker():
 
 
     def process_task(self, payload):
-        grid = np.array(payload['grid'], dtype='float32')
-        region_coords = payload['region_coords']
-        n_cells = payload['n_cells']
-        return heat.update_region(grid, region_coords, n_cells)
+        updated_region = heat.update_region(payload)
+        self.region_vals = updated_region
+        return updated_region
     
     async def send(self, websocket, type, **kwargs):
         message = MESSAGE[type]
