@@ -35,9 +35,27 @@ import time
 # adjacent_regions = np.reshape(adjacent_regions, shape=(9, 4, -1))
 # print(adjacent_regions)
 
-import heapq
-count = {1: 2, 5:8, 6:7}
-count = [(count[num], num) for num in count.keys()]
-print(count)
-heapq.heapify(count)
-print(count)
+# import heapq
+# count = {1: 2, 5:8, 6:7}
+# count = [(count[num], num) for num in count.keys()]
+# count = heapq.heapify(count)
+# print(count)
+
+# b = np.array([[False for _ in range(3)] for _ in range(3)])
+# b[1][2] = True
+# b[2][0] = True
+# b[2][1] = True
+# print(b)
+# b = np.where(b)
+# print(b)
+# print(np.column_stack((b[0], b[1])))
+# b = [(row,col) for row,col in b]
+# b = set(b)
+# for row, col in b:
+#     print(row, col)
+
+
+initial_regions = np.array([[[True for _ in range(3)] for _ in range(3)]])
+updated_regions = np.array([[[False for _ in range(3)] for _ in range(3)] for _ in range(3)])
+updated_regions = np.concat((initial_regions, updated_regions))
+print(updated_regions)

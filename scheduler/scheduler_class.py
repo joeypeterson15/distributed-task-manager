@@ -5,106 +5,125 @@ import collections
 N_NEIGHBORS = 4
 
 class Scheduler():    
-    def __init__(self):
-        self.client = ''
-        self.workers = collections.defaultdict(list)
-        self.task = ''
+    def __init__(self):       
         self.configure()
 
     def configure(self):
+        self.tasks_queue = []
+        self.workers = collections.defaultdict(list)
         self.n_grid_cols = 3
         self.n_grid_rows = 3
         self.n_cells = 4
         self.n_regions = self.n_grid_cols * self.n_grid_rows
-        self.regions = self.collect_regions(self.n_grid_cols, self.n_grid_rows)
-        self.collect_adj_regions()
         self.sim_duration = 25 #seconds
         self.time_interval = 1 #seconds
         self.epochs = self.sim_duration // self.time_interval
         self.epoch = 0
         self.n_worker_updates = 0
-        self.grid = self.gen_initial_grid()
-        self.updated_regions = [[True for _ in range(self.n_grid_cols)] for _ in range(self.n_grid_rows)]
+
+        self.grid = self.generate_grid()
+        self.dependents_graph = self.generate_dependency_graph()
+        self.required_ready_count = self.generate_required_ready_count()
+        self.ready_neighbor_count = self.generate_ready_neighbor_count()
+        self.updated_regions_bool = self.generate_updated_regions_grid()
 
     def register_worker(self, websocket, id):
         self.workers[id].append(websocket)
 
-    def assign_regions_to_workers(self):
-        for i, id in enumerate(self.workers.keys()):
-            self.workers[id].append(self.regions[i])
-            self.workers[id].append(self.adjacent_regions[i])
-
     def register_client(self, websocket):
         self.client = websocket
 
-    def configure_tasks(self, task):
-        self.task = task
+    def generate_updated_regions_grid(self):
+        updated_regions_grid = np.zeros(shape=(self.epochs, self.n_grid_rows, self.n_grid_cols))
+        for init_m in range(self.n_grid_rows):
+            for init_n in range(self.n_grid_cols):
+                updated_regions_grid[init_m][init_n] = 1
+        return updated_regions_grid
 
-    def update_status(self, status_num):
-        self.status = status_num
     
-    def update_grid(self, region, new_region_values):
-        reg_row, reg_col = region
-        self.grid[self.epoch + 1][reg_row][reg_col] = new_region_values
-        self.updated_regions[reg_row][reg_col] = True
-    
-    def gen_initial_grid(self):
+    def update_grid(self, region, new_region_values, epoch):
+        row, col = region
+        self.grid[self.epoch + 1][row][col] = new_region_values
+        self.updated_regions_bool[epoch][row][col] = 1
+        self.update_dependents(row, col)
+
+    def update_dependents(self, row, col, epoch):
+        for r, c in self.dependents_graph[(row, col)]:
+            self.ready_neighbor_count[epoch][r][c] += 1
+            self.enqueue_tasks(r, c, epoch)
+
+    def enqueue_tasks(self, r, c, epoch):
+        if self.ready_neighbor_count[epoch][r][c] == self.required_ready_count[r][c] \
+        and self.updated_regions_bool[r][c] == 1:
+            self.tasks_queue.append(self.task_payload((r,c), epoch + 1))
+
+    def generate_grid(self):
         rng = np.random.default_rng()
         grid = rng.random(size=(self.epochs,self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
         return grid
-
-    def collect_regions(self, n_cols, n_rows):
-        return [[r, c] for r in range(n_rows) for c in range(n_cols)]
     
-    def collect_adj_regions(self):
-        self.adjacent_regions=[[[] for _ in range(self.n_grid_cols)] for _ in range(self.n_grid_rows)]
+    def generate_ready_neighbor_count(self):
+        ready_neighbor_count = np.zeros(shape=(self.epochs, self.n_grid_rows, self.n_grid_cols))
+
+        for init_row, init_col in self.required_ready_count.keys():
+            ready_neighbor_count[0][init_row][init_col] = self.required_ready_count[(init_row, init_col)]
+        
+        return ready_neighbor_count
+
+    def generate_dependency_graph(self):
+        dependency_graph = collections.defaultdict(list)
         dir = [(0,1), (0,-1), (1,0), (-1,0)]
+
         for row in range(self.n_grid_rows):
             for col in range(self.n_grid_cols):
                 for dr, dc in dir:
-                    self.adjacent_regions[row][col].append((row + dr,col + dc))
-        self.adjacent_regions = np.reshape(self.adjacent_regions, shape=(self.n_grid_cols * self.n_grid_rows, 4, -1))
+                    r, c = row + dr, col + dc
+                    if r < 0 or r > self.n_grid_rows - 1 or c < 0 or c > self.n_grid_cols - 1:
+                        continue
+                    dependency_graph[(row, col)].append((r,c))
+
+        return dependency_graph
+                    
     
-    def collect_region_boundaries(self, region):
-        zeros = np.zeros((self.n_cells))
+    def generate_required_ready_count(self):
+        required_count = {}
+        dir = [(0,1), (0,-1), (1,0), (-1,0)]
+
+        for row in range(self.n_grid_rows):
+            for col in range(self.n_grid_cols):
+
+                required_count[(row,col)] = 4 # assume all regions have 4 neighbors
+
+                for dr, dc in dir:
+                    r, c = row + dr, col + dc
+                    if r < 0 or r > self.n_grid_rows - 1:
+                        required_count[(row, col)] -= 1
+                    if c < 0 or c > self.n_grid_cols - 1:
+                        required_count[(row, col)] -= 1
+        
+        return required_count
+
+
+    # def collect_regions(self, n_cols, n_rows):
+    #     return [[r, c] for r in range(n_rows) for c in range(n_cols)]
+    
+    
+    def collect_ghost_region_boundaries(self, region, epoch):
+        zeros = np.zeros((self.n_cells)).tolist()
         r, c = region
-
-        rtop = zeros if r == 0 else self.grid[self.epoch][r - 1][c][self.n_cells - 1][:]
-
-        rbot = zeros if r == (self.n_grid_rows - 1) else self.grid[self.epoch][r + 1][c][0][:]
-
-        cleft = zeros if c == 0 else self.grid[self.epoch][r][c - 1][:][self.n_cells - 1]
-
-        cright = zeros if c == (self.n_grid_cols - 1) else self.grid[self.epoch][r][c + 1][:][0]
-
+        rtop = zeros if r == 0 else self.grid[epoch][r - 1][c][self.n_cells - 1][:]
+        rbot = zeros if r == (self.n_grid_rows - 1) else self.grid[epoch][r + 1][c][0][:]
+        cleft = zeros if c == 0 else self.grid[epoch][r][c - 1][:][self.n_cells - 1]
+        cright = zeros if c == (self.n_grid_cols - 1) else self.grid[epoch][r][c + 1][:][0]
         return [rtop, rbot, cleft, cright]
     
-    def check_task_ready_for_assignment(self):
-        updated_regions = set(np.where(self.updated_regions))
-        tasks = []
-        for id in self.workers.keys():
-            websocket, assigned_region, adjacent_regions = self.workers[id]
-            updated_adj_count = 0
-            for r,c in adjacent_regions:
-                if (r,c) in updated_regions:
-                    updated_adj_count += 1
-                elif r < 0 or r > len(self.n_grid_rows - 1) or c < 0 or c > len(self.n_grid_cols - 1):
-                    updated_adj_count += 1
-            if updated_adj_count == N_NEIGHBORS:
-                payload = self.task_payload(assigned_region)
-                tasks.append([websocket, payload])
-        return tasks
-    
-    def task_payload(self, region):
-        boundaries = self.collect_region_boundaries(region)
+    def task_payload(self, region, epoch):
+        boundaries = self.collect_ghost_region_boundaries(region, epoch)
         payload = {
+                    'epoch': epoch + 1,
                     'boundaries': boundaries,
                     'region': region,
-                    'n_regions': (self.n_grid_cols, self.n_grid_rows),
-                    'n_cells': (self.n_cells, self.n_cells)
+                    'region_vals': self.grid[epoch][region[0]][region[1]],
                 }
-        if self.epoch == 0:
-            starting_values = self.grid[self.epoch][region[0]][region[1]].tolist()
-            payload['initial_region_values'] = starting_values
         
         return payload

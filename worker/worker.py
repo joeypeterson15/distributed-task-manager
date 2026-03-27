@@ -58,7 +58,12 @@ class Worker():
                         self.process_task,
                         message['payload']
                     )
-                    await self.send(websocket, 'task_complete', **{'region': new_region.tolist(), 'region_coords': message['payload']['region_coords']})
+                    payload = {
+                        'region': new_region.tolist(),
+                        'region_coords': message['payload']['region_coords'],
+                        'epoch': message['payload']['epoch']
+                        }
+                    await self.send(websocket, 'task_complete', **payload)
 
 
     def process_task(self, payload):
