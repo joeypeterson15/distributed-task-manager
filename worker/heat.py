@@ -2,14 +2,13 @@ import numpy as np
 
 K = float(0.2) # scalar
 
-def update_region(payload, worker):
+def update_region(payload):
     boundaries = np.array(payload['boundaries'], dtype='float32')
-    # region = payload['region']
-    n_cells = worker.cells
-    region_vals = worker.region_vals
+    region_vals = np.array(payload['region_vals'], dtype='float32')
 
-    region_plus_ghost = add_ghost_boundaries(boundaries, region_vals, n_cells)
-    n_cell_rows, n_cell_cols = n_cells
+    n_cell_rows, n_cell_cols = len(region_vals), len(region_vals[0])
+
+    region_plus_ghost = add_ghost_boundaries(boundaries, region_vals)
 
     next_region = np.zeros(shape=(n_cell_rows, n_cell_cols), dtype='float32')
     for m in range(1, n_cell_rows + 1):
@@ -22,7 +21,8 @@ def update_region(payload, worker):
     
     return next_region
 
-def add_ghost_boundaries(boundaries, region_vals, n_cells):
+def add_ghost_boundaries(boundaries, region_vals):
+    print('here')
     # n_cell_rows, n_cell_cols = n_cells
     rtop, rbot, cleft, cright = boundaries
     # region_r, region_c = region_coords

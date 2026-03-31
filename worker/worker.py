@@ -34,42 +34,57 @@ MESSAGE = {
             'new_region': ''
         }
     },
+
+    'task_request' : {
+        'type': 'task_request',
+        'payload': {
+
+        }
+    }
 }
 
 class Worker():
     def __init__(self, id):
         self.id = id
-        self.region = None
-        self.region_vals = []
 
     async def connect(self, executor):
         async with websockets.connect(URI) as websocket:
-            await self.send(websocket, 'register', **{'id': f'{self.id}'})
+            await self.send(websocket, 'register', **{'Worker Id': f'{self.id}'})
+            await self.request_task(websocket)
 
             while True:
-                message = await websocket.recv()
-                message = json.loads(message)
-
-                if message['type'] == 'task_assign':
-                    loop = asyncio.get_running_loop()
-                    # await self.send(websocket, 'stdout', **{'message': f'Worker {self.id} Processing task'})
-                    new_region = await loop.run_in_executor(
-                        executor,
-                        self.process_task,
-                        message['payload']
+                try:
+                    response_raw = await asyncio.wait_for(
+                        websocket.recv(),
+                        timeout=2.0
                     )
-                    payload = {
-                        'region': new_region.tolist(),
-                        'region_coords': message['payload']['region_coords'],
-                        'epoch': message['payload']['epoch']
-                        }
-                    await self.send(websocket, 'task_complete', **payload)
+                    message = json.loads(response_raw)
 
+                    if message['type'] == 'task_assign':
+                        loop = asyncio.get_running_loop()
+                        new_region = await loop.run_in_executor(
+                            executor,
+                            self.process_task,
+                            message['payload']
+                        )
+                        payload = {
+                            'region_vals': new_region.tolist(),
+                            'region': message['payload']['region'],
+                            'epoch': message['payload']['epoch']
+                            }
+                        await self.send(websocket, 'task_complete', **payload)
+                        await self.send(websocket, 'task_request')
+
+                except asyncio.TimeoutError:
+                    await self.send(websocket, 'task_request')
 
     def process_task(self, payload):
         updated_region = heat.update_region(payload)
-        self.region_vals = updated_region
         return updated_region
+    
+    async def request_task(self, websocket):
+        await self.send(websocket, 'task_request')
+
     
     async def send(self, websocket, type, **kwargs):
         message = MESSAGE[type]

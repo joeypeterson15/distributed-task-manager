@@ -8,7 +8,6 @@ import numpy as np
 import os
 import time
 
-
 MESSAGE = {
     'task_assign' : {
         'type': 'task_assign',
@@ -31,36 +30,23 @@ async def server():
 
             if type == 'task_complete':
                 await update_grid(payload)
+            
+            if type == 'task_request':
+                if scheduler.tasks_queue:
+                    await assign_task(websocket)
 
 
     async def update_grid(payload):
         region = payload['region']
-        epoch = payload['worker_epoch']
+        epoch = payload['epoch']
         region_vals = np.array(payload['region_vals'], dtype='float32')
 
-        # INSTEAD OF SENDING UPDATES WHEN ALL WORKERS ARE DONE
-        #   CHECK IF THE WORKERS BOUNDARIES ARE PRESENT
-        #       IF WORKERS BOUNDARIES ARE UPDATED THEN UPDATE REGION BOUNDARIES AND GRID AND SEND NEIGHBOR BOUNDARIES BACK
-        #       ELSE JUST UPDATE REGION BOUNDARIES AND CONTINUE LISTENING
         scheduler.update_grid(region, region_vals, epoch)
 
-        # if scheduler.n_worker_updates == scheduler.n_regions:
-        if len(np.where(scheduler.updated_regions_bool[epoch])[0]) == scheduler.n_regions:
-            print(f'Epoch {scheduler.epoch + 1} Complete')
 
-            if len(np.where(scheduler.updated_regions_bool[scheduler.epochs - 1])[0]) == scheduler.n_regions:
-                print(f'Time elapsed: {(scheduler.time):.4f}')
-
-                visualizer.visualize(scheduler.grid)
-                return
-        if epoch < scheduler.epochs - 1: # else there are no more tasks to assign this worker
-            asyncio.create_task(assign_tasks_to_workers(epoch))
-
-    async def assign_tasks_to_workers(epoch):
-        tasks = scheduler.collect_workers_ready_for_assignment(epoch)
-        for websocket, payload in tasks:
-            await send(websocket, 'task_assign', **payload)
-            scheduler.n_worker_updates += 1
+    async def assign_task(websocket):
+        task = scheduler.tasks_queue.popleft()
+        await send(websocket, 'task_assign', **task)
 
     async def register(websocket, payload):
         name,id = payload['name'], payload['id']
@@ -72,8 +58,6 @@ async def server():
             # broadcast tasks to workers once all required workers are registered
             if len(scheduler.workers) == scheduler.n_regions:
                 scheduler.time = time.perf_counter()
-                scheduler.assign_regions_to_workers()
-                asyncio.create_task(assign_tasks_to_workers(-1))
 
         if name == 'client':
             tasks = payload['tasks']
