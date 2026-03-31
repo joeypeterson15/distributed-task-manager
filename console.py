@@ -55,7 +55,26 @@ import time
 #     print(row, col)
 
 
-initial_regions = np.array([[[True for _ in range(3)] for _ in range(3)]])
-updated_regions = np.array([[[False for _ in range(3)] for _ in range(3)] for _ in range(3)])
-updated_regions = np.concat((initial_regions, updated_regions))
-print(updated_regions)
+# initial_regions = np.array([[[True for _ in range(3)] for _ in range(3)]])
+# updated_regions = np.array([[[False for _ in range(3)] for _ in range(3)] for _ in range(3)])
+# updated_regions = np.concat((initial_regions, updated_regions))
+# print(updated_regions)
+
+# print('grid', grid)
+# col = np.array([4,3,2,1]).reshape(1,-1).T
+# # col = col.reshape(1,-1)
+# print(col)
+# # np.stack((col, grid), 1)
+# grid = np.hstack((col, grid))
+# print(grid)
+required_count = np.zeros(shape=(3, 3))
+required_count[:][:] = 4
+padRow = np.pad(np.array([3] * 1), pad_width=((1,1)), mode='constant', constant_values=2)
+padCol = np.pad(np.array([3] * 1), pad_width=((1,1)), mode='constant', constant_values=2).T
+print(padRow)
+print(padCol)
+required_count[:][0] = padCol
+required_count[:][2] = padCol
+required_count[0][:] = padRow
+required_count[2][:] = padRow
+print(required_count)

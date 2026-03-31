@@ -29,9 +29,11 @@ async def server():
                 print(f'{payload['message']}')
 
             if type == 'task_complete':
+                print(f'task complete')
                 await update_grid(payload)
             
             if type == 'task_request':
+                print(f'task request')
                 if scheduler.tasks_queue:
                     await assign_task(websocket)
 
@@ -42,6 +44,15 @@ async def server():
         region_vals = np.array(payload['region_vals'], dtype='float32')
 
         scheduler.update_grid(region, region_vals, epoch)
+
+        if np.all(scheduler.region_enqueued) and not scheduler.tasks_queue:
+            # print('result: ', scheduler.grid)
+            print(f'Time elapsed: {(scheduler.time):.4f}')
+            visualizer.visualize(scheduler.grid)
+            return
+        
+        scheduler.increment_dependents_and_enqueue(region, epoch)
+        # scheduler.enqueue_tasks(region, epoch)
 
 
     async def assign_task(websocket):

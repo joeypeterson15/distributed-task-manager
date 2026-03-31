@@ -22,13 +22,16 @@ def update_region(payload):
     return next_region
 
 def add_ghost_boundaries(boundaries, region_vals):
-    print('here')
+    # print('here')
     # n_cell_rows, n_cell_cols = n_cells
     rtop, rbot, cleft, cright = boundaries
+    rtop, rbot, cleft, cright = np.array(rtop).reshape((1,-1)), np.array(rbot).reshape((1,-1)), np.array(cleft).reshape((1,-1)).T, np.array(cright).reshape((1,-1)).T
     # region_r, region_c = region_coords
 
     # grid = np.pad(grid, ((1,1), (1,1), (0,0), (0,0)))
     # region = grid[region_r + 1][region_c + 1]
+    print('region vals: ', region_vals)
+    print('boundaries: ', cleft)
     region_vals = np.hstack((cleft, region_vals))
     region_vals = np.hstack((region_vals, cright))
     rtop = np.pad(rtop, ((0,0), (1,1)))

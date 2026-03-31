@@ -26,8 +26,9 @@ class Scheduler():
         self.dependents_graph = self.generate_dependency_graph()
         self.required_ready_count = self.generate_required_ready_count()
         self.ready_neighbor_count = self.generate_ready_neighbor_count()
-        self.updated_regions_bool = self.generate_updated_regions_grid()
-        self.ready_queue()
+        self.region_ready_for_update = self.generate_region_ready_for_update()
+        self.region_enqueued = self.generate_region_enqueued()
+        self.ready_initial_queue()
 
     def register_worker(self, websocket, id):
         self.workers[id].append(websocket)
@@ -35,31 +36,37 @@ class Scheduler():
     def register_client(self, websocket):
         self.client = websocket
 
-    def generate_updated_regions_grid(self):
-        updated_regions_grid = np.zeros(shape=(self.epochs, self.n_grid_rows, self.n_grid_cols))
-        updated_regions_grid[0][:][:] = 1 #first grid is ready
-        return updated_regions_grid
+    def generate_region_ready_for_update(self):
+        region_ready_for_update = np.zeros(shape=(self.epochs, self.n_grid_rows, self.n_grid_cols), dtype=bool)
+        region_ready_for_update[0][:][:] = True #first grid is ready
+        print('region ready for update: ', region_ready_for_update)
+        return region_ready_for_update
+
+    def generate_region_enqueued(self):
+        return np.zeros(shape=(self.epochs, self.n_grid_rows, self.n_grid_cols), dtype=bool)
 
     def update_grid(self, region, new_region_values, epoch):
         row, col = region
-        self.grid[self.epoch][row][col] = new_region_values
-        self.updated_regions_bool[epoch][row][col] = 1
-        self.increment_dependents(row, col)
+        self.grid[epoch][row][col] = new_region_values
+        self.region_ready_for_update[epoch][row][col] = True
 
-    def increment_dependents(self, row, col, epoch):
+    def increment_dependents_and_enqueue(self, region, epoch):
+        row, col = region
         for r, c in self.dependents_graph[(row, col)]:
             self.ready_neighbor_count[epoch][r][c] += 1
             self.enqueue_tasks(r, c, epoch)
 
     def enqueue_tasks(self, r, c, epoch):
         if self.ready_neighbor_count[epoch][r][c] == self.required_ready_count[(r,c)] \
-        and self.updated_regions_bool[epoch][r][c] == 1:
+        and self.region_ready_for_update[epoch][r][c] == True and not self.region_enqueued[epoch][r][c]:
             self.tasks_queue.append(self.task_payload((r,c), epoch))
+            self.region_enqueued[epoch][r][c] = True
 
-    def ready_queue(self):
+    def ready_initial_queue(self):
         for r in range(self.n_grid_rows):
             for c in range(self.n_grid_cols):
                 self.enqueue_tasks(r, c, 0)
+        print(self.enqueue_tasks)
 
     def generate_grid(self):
         rng = np.random.default_rng()
@@ -71,7 +78,7 @@ class Scheduler():
 
         for init_row, init_col in self.required_ready_count.keys():
             ready_neighbor_count[0][init_row][init_col] = self.required_ready_count[(init_row, init_col)]
-        
+        print('ready neighbor count:', ready_neighbor_count)
         return ready_neighbor_count
 
     def generate_dependency_graph(self):
@@ -84,11 +91,12 @@ class Scheduler():
                     if r < 0 or r > self.n_grid_rows - 1 or c < 0 or c > self.n_grid_cols - 1:
                         continue
                     dependency_graph[(row, col)].append((r,c))
-
+        print('dependency graph', dependency_graph)
         return dependency_graph
 
     def generate_required_ready_count(self):
         required_count = {}
+
 
         for row in range(self.n_grid_rows):
             for col in range(self.n_grid_cols):
@@ -101,7 +109,7 @@ class Scheduler():
                         required_count[(row, col)] -= 1
                     if c < 0 or c > self.n_grid_cols - 1:
                         required_count[(row, col)] -= 1
-        
+        print('required ready count: ', required_count)
         return required_count
     
     def collect_ghost_region_boundaries(self, region, epoch):
@@ -120,7 +128,5 @@ class Scheduler():
                     'boundaries': boundaries,
                     'region': region,
                     'region_vals': self.grid[epoch][region[0]][region[1]].tolist(),
-                }
-        # print('payload:', payload)
-        
+                }        
         return payload
