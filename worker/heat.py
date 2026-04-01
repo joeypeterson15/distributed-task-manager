@@ -1,6 +1,6 @@
 import numpy as np
 
-K = float(0.2) # scalar
+K = float(0.1) # scalar
 
 def update_region(payload):
     boundaries = np.array(payload['boundaries'], dtype='float32')
@@ -9,6 +9,8 @@ def update_region(payload):
     n_cell_rows, n_cell_cols = len(region_vals), len(region_vals[0])
 
     region_plus_ghost = add_ghost_boundaries(boundaries, region_vals)
+
+    assert region_plus_ghost.shape == (n_cell_rows + 2, n_cell_cols + 2)
 
     next_region = np.zeros(shape=(n_cell_rows, n_cell_cols), dtype='float32')
     for m in range(1, n_cell_rows + 1):
@@ -22,14 +24,13 @@ def update_region(payload):
     return next_region
 
 def add_ghost_boundaries(boundaries, region_vals):
-    # print('here')
-    # n_cell_rows, n_cell_cols = n_cells
-    rtop, rbot, cleft, cright = boundaries
-    rtop, rbot, cleft, cright = np.array(rtop).reshape((1,-1)), np.array(rbot).reshape((1,-1)), np.array(cleft).reshape((1,-1)).T, np.array(cright).reshape((1,-1)).T
-    # region_r, region_c = region_coords
 
-    # grid = np.pad(grid, ((1,1), (1,1), (0,0), (0,0)))
-    # region = grid[region_r + 1][region_c + 1]
+    rtop, rbot, cleft, cright = boundaries
+    rtop = np.array(rtop).reshape((1,-1))
+    rbot = np.array(rbot).reshape((1,-1))
+    cleft = np.array(cleft).reshape((1,-1)).T
+    cright = np.array(cright).reshape((1,-1)).T
+
     print('region vals: ', region_vals)
     print('boundaries: ', cleft)
     region_vals = np.hstack((cleft, region_vals))

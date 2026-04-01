@@ -14,7 +14,6 @@ MESSAGE = {
         'payload': {} 
     }
 }
-
 async def server():
     scheduler = Scheduler()
     async def handler(websocket):
@@ -29,30 +28,31 @@ async def server():
                 print(f'{payload['message']}')
 
             if type == 'task_complete':
+                # print('region:', payload['region'])
+                # print('epoch: ', payload['epoch'])
                 print(f'task complete')
                 await update_grid(payload)
             
             if type == 'task_request':
-                print(f'task request')
+                # print(f'task request')
                 if scheduler.tasks_queue:
+                    # print('len scheduler queue', len(scheduler.tasks_queue), websocket)
                     await assign_task(websocket)
 
-
+    
     async def update_grid(payload):
         region = payload['region']
         epoch = payload['epoch']
         region_vals = np.array(payload['region_vals'], dtype='float32')
 
         scheduler.update_grid(region, region_vals, epoch)
-
-        if np.all(scheduler.region_enqueued) and not scheduler.tasks_queue:
-            # print('result: ', scheduler.grid)
-            print(f'Time elapsed: {(scheduler.time):.4f}')
+        if np.all(scheduler.prev_region_present[epoch]):
+            print(f'EPOCH {epoch} COMPLETE: REGION VALUES: => ', scheduler.grid[epoch])
+        if np.all(scheduler.prev_region_present[scheduler.epochs - 1]):
             visualizer.visualize(scheduler.grid)
             return
-        
-        scheduler.increment_dependents_and_enqueue(region, epoch)
-        # scheduler.enqueue_tasks(region, epoch)
+        if epoch < scheduler.epochs - 1:
+            scheduler.increment_dependents_and_enqueue(region, epoch)
 
 
     async def assign_task(websocket):
@@ -65,10 +65,6 @@ async def server():
         if name == 'worker':
             scheduler.register_worker(websocket, id)
             print(f'Worker {id}: Registered')
-
-            # broadcast tasks to workers once all required workers are registered
-            if len(scheduler.workers) == scheduler.n_regions:
-                scheduler.time = time.perf_counter()
 
         if name == 'client':
             tasks = payload['tasks']
@@ -90,6 +86,5 @@ async def server():
     await main()
 
 if __name__ == "__main__":
-    s = Scheduler()
     asyncio.run(server())
 
