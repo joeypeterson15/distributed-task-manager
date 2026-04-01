@@ -1,6 +1,6 @@
 import numpy as np
 
-K = float(0.1) # scalar
+K = float(0.2) # scalar
 
 def update_region(payload):
     boundaries = np.array(payload['boundaries'], dtype='float32')

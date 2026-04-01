@@ -47,7 +47,8 @@ async def server():
 
         scheduler.update_grid(region, region_vals, epoch)
         if np.all(scheduler.prev_region_present[epoch]):
-            print(f'EPOCH {epoch} COMPLETE: REGION VALUES: => ', scheduler.grid[epoch])
+            print(np.sum(scheduler.grid[epoch]))
+            # print(f'EPOCH {epoch} COMPLETE: REGION VALUES: => ', scheduler.grid[epoch])
         if np.all(scheduler.prev_region_present[scheduler.epochs - 1]):
             visualizer.visualize(scheduler.grid)
             return

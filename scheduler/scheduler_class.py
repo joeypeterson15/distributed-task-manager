@@ -16,7 +16,7 @@ class Scheduler():
         self.n_grid_rows = 4
         self.n_cells = 4
         self.n_regions = self.n_grid_cols * self.n_grid_rows
-        self.sim_duration = 30 #seconds
+        self.sim_duration = 45 #seconds
         self.time_interval = 1 #seconds
         self.epochs = self.sim_duration // self.time_interval
         self.epoch = 0
@@ -72,12 +72,19 @@ class Scheduler():
         rng = np.random.default_rng()
         grid = rng.random(size=(self.epochs,self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
         # grid = np.zeros(shape=(self.epochs,self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
-        # grid[0][0][0][0][0] = 1
+        # grid[0][0][0][0][0] = 0.7
         # grid[0][1][1][0][0] = 1
         # grid[0][1][0][1][0] = 1
-        # grid[0][0][1][0][1] = 1
-        # grid[0][1][1][1][0] = 1
-        # grid[0][0][1][1][1] = 1
+        # grid[0][0][3][0][1] = 0.5
+        # grid[0][1][1][2][0] = 1
+        # grid[0][0][1][1][1] = 0.5
+        # grid[0][3][1][1][1] = 1
+        # grid[0][0][1][1][2] = 1
+        # grid[0][3][3][0][2] = 1
+        # grid[0][0][1][1][0] = 0.2
+        # grid[0][3][2][2][1] = 0.1
+        # grid[0][2][3][1][2] = 1
+        # print(f'EPOCH 0: ', grid[0])
         return grid
     
     def generate_ready_neighbor_count(self):
