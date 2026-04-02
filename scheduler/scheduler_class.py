@@ -12,11 +12,11 @@ class Scheduler():
     def configure(self):
         self.tasks_queue = collections.deque()
         self.workers = collections.defaultdict(list)
-        self.n_grid_cols = 4
-        self.n_grid_rows = 4
-        self.n_cells = 4
+        self.n_grid_cols = 1
+        self.n_grid_rows = 1
+        self.n_cells = 20
         self.n_regions = self.n_grid_cols * self.n_grid_rows
-        self.sim_duration = 45 #seconds
+        self.sim_duration = 20 #seconds
         self.time_interval = 1 #seconds
         self.epochs = self.sim_duration // self.time_interval
         self.epoch = 0
@@ -71,6 +71,11 @@ class Scheduler():
     def generate_grid(self):
         rng = np.random.default_rng()
         grid = rng.random(size=(self.epochs,self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
+        mock_data = np.load('matrix.npy')
+        # mock_data = np.reshape(mock_data, (20, 2,2,10,10))
+        grid[0] = mock_data[0]
+        # print('GRID first val : ', grid[0][0][0][0][0])
+        
         # grid = np.zeros(shape=(self.epochs,self.n_grid_rows, self.n_grid_cols, self.n_cells, self.n_cells))
         # grid[0][0][0][0][0] = 0.7
         # grid[0][1][1][0][0] = 1
@@ -132,10 +137,16 @@ class Scheduler():
         rbot = zeros if r == (self.n_grid_rows - 1) else self.grid[epoch][r + 1][c][0][:]
         cleft = zeros if c == 0 else self.grid[epoch][r][c - 1][:][self.n_cells - 1]
         cright = zeros if c == (self.n_grid_cols - 1) else self.grid[epoch][r][c + 1][:][0]
+        if (region == (1,1)):
+            print('REGION 0,1 BOUNDARIES: ', [rtop.tolist(), rbot.tolist(), cleft.tolist(), cright.tolist()])
         return [rtop.tolist(), rbot.tolist(), cleft.tolist(), cright.tolist()]
     
     def task_payload(self, region, epoch):
         boundaries = self.collect_ghost_region_boundaries(region, epoch)
+        if np.all(boundaries[3] == 0) and region == (0,0):
+            print('CRIGHT ZERO EPOCH: ', epoch, 'REGION: ', region)
+        if np.all(boundaries[2] == 0) and region == (1,1):
+            print('CLEFT ZERO: EPOCH: ', epoch, 'REGION: ', region)
         payload = {
                     'epoch': epoch + 1,
                     'boundaries': boundaries,

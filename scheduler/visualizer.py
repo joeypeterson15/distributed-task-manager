@@ -14,14 +14,14 @@ def visualize(grid):
 #             epoch.shape[0] * epoch.shape[2],
 #             epoch.shape[1] * epoch.shape[3]
 # )
-        if i == 0:
-            print('EPOCH 0 in visualizer: ', epoch)
+        # if i == 0:
+            # print('EPOCH 0 in visualizer: ', epoch)
         epoch = np.transpose(epoch, (0, 2, 1, 3))
-        if i == 0:
-            print('EPOCH 0 in visualizer transposed: ', epoch)
-        reshaped_grid.append(np.reshape(epoch, (16,16)))
-        if i == 0:
-            print('EPOCH 0 in visualizer transposed and reshaped: ', reshaped_grid[i])
+        # if i == 0:
+            # print('EPOCH 0 in visualizer transposed: ', epoch)
+        reshaped_grid.append(np.reshape(epoch, (20,20)))
+        # if i == 0:
+            # print('EPOCH 0 in visualizer transposed and reshaped: ', reshaped_grid[i])
     
     fig, ax = plt.subplots()
     im = ax.imshow(reshaped_grid[0], cmap='cool', interpolation='nearest')

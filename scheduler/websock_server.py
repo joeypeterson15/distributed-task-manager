@@ -46,10 +46,11 @@ async def server():
         region_vals = np.array(payload['region_vals'], dtype='float32')
 
         scheduler.update_grid(region, region_vals, epoch)
-        if np.all(scheduler.prev_region_present[epoch]):
-            print(np.sum(scheduler.grid[epoch]))
+        # if np.all(scheduler.prev_region_present[epoch]):
+
             # print(f'EPOCH {epoch} COMPLETE: REGION VALUES: => ', scheduler.grid[epoch])
         if np.all(scheduler.prev_region_present[scheduler.epochs - 1]):
+            np.save('expanded_real_epochs(20,2,2,10,10).npy', scheduler.grid)
             visualizer.visualize(scheduler.grid)
             return
         if epoch < scheduler.epochs - 1:

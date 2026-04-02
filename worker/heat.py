@@ -9,6 +9,8 @@ def update_region(payload):
     n_cell_rows, n_cell_cols = len(region_vals), len(region_vals[0])
 
     region_plus_ghost = add_ghost_boundaries(boundaries, region_vals)
+    # if payload['region'] == [0,0]:
+    #     print('REGION_PLUS_GHOST REGION (0,0) :', region_plus_ghost)
 
     assert region_plus_ghost.shape == (n_cell_rows + 2, n_cell_cols + 2)
 
@@ -21,6 +23,8 @@ def update_region(payload):
 
             next_region[m - 1][n - 1] = laplacian
     
+    # assert len(region_vals) == 10 and len(region_vals[0]) == 10
+    
     return next_region
 
 def add_ghost_boundaries(boundaries, region_vals):
@@ -31,14 +35,16 @@ def add_ghost_boundaries(boundaries, region_vals):
     cleft = np.array(cleft).reshape((1,-1)).T
     cright = np.array(cright).reshape((1,-1)).T
 
-    print('region vals: ', region_vals)
-    print('boundaries: ', cleft)
+    # print('region vals: ', region_vals)
+    # print('boundaries: ', cleft)
     region_vals = np.hstack((cleft, region_vals))
     region_vals = np.hstack((region_vals, cright))
     rtop = np.pad(rtop, ((0,0), (1,1)))
     rbot = np.pad(rbot, ((0,0), (1,1)))
     region_vals = np.vstack((rtop, region_vals))
     region_vals = np.vstack((region_vals, rbot))
+
+    # assert len(region_vals) == 12 and len(region_vals[0]) == 12
 
     return region_vals
 
