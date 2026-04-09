@@ -7,41 +7,11 @@ import asyncio
 import heat
 import concurrent.futures
 import numpy as np
+from utils import WORKER_MESSAGE
 
 URI = 'ws://localhost:8001'
 load_dotenv()
 port = os.getenv("PORT")
-
-MESSAGE = {
-    'register' : {
-        'type': 'register',
-        'payload': {
-            'name': 'worker',
-            'id': ''
-        }
-    },
-
-    'stdout' : {
-        'type': 'stdout',
-        'payload': {
-            'message': ''
-        } 
-    },
-
-    'task_complete' : {
-        'type': 'task_complete',
-        'payload': {
-            'new_region': ''
-        }
-    },
-
-    'task_request' : {
-        'type': 'task_request',
-        'payload': {
-
-        }
-    }
-}
 
 class Worker():
     def __init__(self, id):
@@ -87,7 +57,7 @@ class Worker():
 
     
     async def send(self, websocket, type, **kwargs):
-        message = MESSAGE[type]
+        message = WORKER_MESSAGE[type]
         for key in kwargs.keys():
             message['payload'][key] = kwargs[key]
         await websocket.send(json.dumps(message))

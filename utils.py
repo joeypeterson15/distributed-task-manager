@@ -1,27 +1,39 @@
 import json
 
-MESSAGES = {
-    'scheduler' : {
-        'task_assign' : {
-            'type': 'task_assign',
-        }
-    },
-
-    'worker': { 
-        'register' : {
-            'type': 'register'
-        }
-    },
-
-    'client': {
-        'register': {
-            'type': 'register'
-        }
+SERVER_MESSAGE = {
+    'task_assign' : {
+        'type': 'task_assign',
+        'payload': {} 
     }
 }
 
+WORKER_MESSAGE = {
+    'register' : {
+        'type': 'register',
+        'payload': {
+            'name': 'worker',
+            'id': ''
+        }
+    },
 
-async def send(sender, websocket, type, payload={}):
-    message = MESSAGES[sender][type]
-    message['payload'] = payload
-    await websocket.send(json.dumps(message))
+    'stdout' : {
+        'type': 'stdout',
+        'payload': {
+            'message': ''
+        } 
+    },
+
+    'task_complete' : {
+        'type': 'task_complete',
+        'payload': {
+            'new_region': ''
+        }
+    },
+
+    'task_request' : {
+        'type': 'task_request',
+        'payload': {
+
+        }
+    }
+}

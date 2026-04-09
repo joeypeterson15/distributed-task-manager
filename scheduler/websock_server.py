@@ -7,13 +7,8 @@ import visualizer
 import numpy as np
 import os
 import time
+from utils import SERVER_MESSAGE
 
-MESSAGE = {
-    'task_assign' : {
-        'type': 'task_assign',
-        'payload': {} 
-    }
-}
 async def server():
     scheduler = Scheduler()
     async def handler(websocket):
@@ -76,7 +71,7 @@ async def server():
             await websocket.send(f'Tasks Registered')
          
     async def send(websocket, type, **kwargs):
-        message = MESSAGE[type]
+        message = SERVER_MESSAGE[type]
         for key in kwargs.keys():
             message['payload'][key] = kwargs[key]
         await websocket.send(json.dumps(message))
